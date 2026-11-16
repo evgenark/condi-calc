@@ -1,15 +1,31 @@
 package io.github.evgenark.condicalc.data
 
+enum class Unit(val label: String, val isMass: Boolean) {
+    KG("кг", true),
+    G("г", true),
+    L("л", false),
+    ML("мл", false),
+    PCS("шт", false),
+    TSP("ч. л.", false),
+    TBSP("ст. л.", false),
+    CUP("стакан", false);
+}
+
 data class Product(
     val name: String,
-    var pricePerKg: Double,      // руб. за кг
-)
+    var unit: Unit = Unit.G,
+    var packAmount: Double = 1.0,   // сколько в упаковке (в единицах unit)
+    var packPrice: Double = 0.0,    // цена упаковки, ₽
+) {
+    val pricePerUnit: Double
+        get() = if (packAmount > 0) packPrice / packAmount else 0.0
+}
 
 data class Ingredient(
     val product: Product,
-    var amountG: Int,            // граммы в рецепте
+    var amount: Double,             // количество в единицах продукта
 ) {
-    val cost get() = amountG / 1000.0 * product.pricePerKg
+    val cost get() = amount * product.pricePerUnit
 }
 
 data class Recipe(

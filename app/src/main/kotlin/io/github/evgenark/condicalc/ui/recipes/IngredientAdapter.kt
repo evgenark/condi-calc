@@ -27,7 +27,7 @@ class IngredientAdapter(private val items: List<Ingredient>) :
     override fun onBindViewHolder(holder: VH, position: Int) {
         val item = items[position]
         holder.name.text = item.product.name
-        holder.amount.text = "${item.amountG} г"
+        holder.amount.text = "%.1f %s".format(item.amount, item.product.unit.label)
         holder.cost.text = "%.0f ₽".format(item.cost)
     }
 }
