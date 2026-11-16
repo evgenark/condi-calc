@@ -12,7 +12,7 @@ enum class Unit(val label: String, val isMass: Boolean) {
 }
 
 data class Product(
-    val name: String,
+    var name: String,
     var unit: Unit = Unit.G,
     var packAmount: Double = 1.0,   // сколько в упаковке (в единицах unit)
     var packPrice: Double = 0.0,    // цена упаковки, ₽
