@@ -10,7 +10,7 @@ import io.github.evgenark.condicalc.R
 import io.github.evgenark.condicalc.data.Ingredient
 import io.github.evgenark.condicalc.data.Recipe
 
-class RecipeAdapter(private val recipes: List<Recipe>) :
+class RecipeAdapter(val recipes: MutableList<Recipe>) :
     RecyclerView.Adapter<RecipeAdapter.VH>() {
 
     class VH(v: View) : RecyclerView.ViewHolder(v) {

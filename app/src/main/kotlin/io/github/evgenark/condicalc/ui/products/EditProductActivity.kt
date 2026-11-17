@@ -1,52 +1,66 @@
 package io.github.evgenark.condicalc.ui.products
 
-import android.app.Activity
 import android.os.Bundle
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Spinner
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import io.github.evgenark.condicalc.R
+import io.github.evgenark.condicalc.data.Product
 import io.github.evgenark.condicalc.data.Repo
 import io.github.evgenark.condicalc.data.Unit
+import kotlinx.coroutines.launch
 
-class EditProductActivity : Activity() {
+class EditProductActivity : AppCompatActivity() {
+
+    private var product: Product? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_edit_product)
 
-        val index = intent.getIntExtra(EXTRA_INDEX, -1)
-        if (index < 0 || index >= Repo.products.size) { finish(); return }
-        val product = Repo.products[index]
+        val id = intent.getLongExtra(EXTRA_ID, -1L)
+        if (id < 0) { finish(); return }
 
         val name = findViewById<EditText>(R.id.editName)
         val unit = findViewById<Spinner>(R.id.editUnit)
         val amount = findViewById<EditText>(R.id.editPackAmount)
         val price = findViewById<EditText>(R.id.editPackPrice)
 
-        name.setText(product.name)
+        lifecycleScope.launch {
+            val loaded = Repo.getProductById(id) ?: run {
+                finish()
+                return@launch
+            }
+            product = loaded
 
-        val units = Unit.entries.map { it.label }
-        unit.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, units)
-        unit.setSelection(Unit.entries.indexOf(product.unit))
-
-        amount.setText(product.packAmount.toString())
-        price.setText(product.packPrice.toString())
+            name.setText(loaded.name)
+            val units = Unit.entries.map { it.label }
+            unit.adapter = ArrayAdapter(this@EditProductActivity, android.R.layout.simple_spinner_dropdown_item, units)
+            unit.setSelection(Unit.entries.indexOf(loaded.unit))
+            amount.setText(loaded.packAmount.toString())
+            price.setText(loaded.packPrice.toString())
+        }
 
         findViewById<Button>(R.id.saveBtn).setOnClickListener {
-            product.name = name.text.toString().ifBlank { product.name }
-            product.unit = Unit.entries[unit.selectedItemPosition]
-            product.packAmount = amount.text.toString().toDoubleOrNull() ?: product.packAmount
-            product.packPrice = price.text.toString().toDoubleOrNull() ?: product.packPrice
-            Toast.makeText(this, "Сохранено", Toast.LENGTH_SHORT).show()
-            finish()
+            val current = product ?: return@setOnClickListener
+            current.name = name.text.toString().ifBlank { current.name }
+            current.unit = Unit.entries[unit.selectedItemPosition]
+            current.packAmount = amount.text.toString().toDoubleOrNull() ?: current.packAmount
+            current.packPrice = price.text.toString().toDoubleOrNull() ?: current.packPrice
+
+            lifecycleScope.launch {
+                Repo.updateProduct(current)
+                Toast.makeText(this@EditProductActivity, "Сохранено", Toast.LENGTH_SHORT).show()
+                finish()
+            }
         }
     }
 
     companion object {
-        const val EXTRA_INDEX = "index"
+        const val EXTRA_ID = "id"
     }
 }
-

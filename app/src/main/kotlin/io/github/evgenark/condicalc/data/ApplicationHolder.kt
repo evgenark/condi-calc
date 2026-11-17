@@ -10,5 +10,6 @@ class CondiCalcApp : Application() {
     override fun onCreate() {
         super.onCreate()
         ApplicationHolder.context = this
+        Repo.init(this)
     }
 }
