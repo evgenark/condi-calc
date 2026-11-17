@@ -1,4 +1,3 @@
-
 package io.github.evgenark.condicalc.data.db
 
 import androidx.room.Database

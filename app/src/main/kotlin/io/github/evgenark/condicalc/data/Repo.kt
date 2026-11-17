@@ -1,4 +1,3 @@
-
 package io.github.evgenark.condicalc.data
 
 import android.content.Context
@@ -106,7 +105,7 @@ object Repo {
             name = e.name,
             unit = unit,
             packAmount = e.packAmount,
-            packPrice = e.packPrice,
+            packPrice = e.packPrice
             id = e.id
         )
     }

@@ -1,4 +1,3 @@
-
 package io.github.evgenark.condicalc.data
 
 import android.app.Application
