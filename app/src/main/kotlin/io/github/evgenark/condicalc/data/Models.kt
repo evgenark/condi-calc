@@ -16,6 +16,7 @@ data class Product(
     var unit: Unit = Unit.G,
     var packAmount: Double = 1.0,   // сколько в упаковке (в единицах unit)
     var packPrice: Double = 0.0,    // цена упаковки, ₽
+    val id: Long = 0L
 ) {
     val pricePerUnit: Double
         get() = if (packAmount > 0) packPrice / packAmount else 0.0
