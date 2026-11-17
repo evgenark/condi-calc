@@ -3,6 +3,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.kapt")
+}
 
 android {
     namespace = "io.github.evgenark.condicalc"
@@ -13,7 +14,7 @@ android {
         minSdk = 21
         targetSdk = 35
         versionCode = 1
-        versionName = "0.0.012"
+        versionName = "0.0.013"
     }
 
     sourceSets {
@@ -41,3 +42,4 @@ dependencies {
     // Lifecycle (lifecycleScope для корутин в активити)
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
 }
+
