@@ -119,6 +119,22 @@ object Repo {
         }
     }
     
+    suspend fun saveRecipe(name: String, items: List<Triple<Long, Double, String>>): Long {
+        val db = DatabaseProvider.get(ApplicationHolder.context)
+        val recipeId = db.recipeDao().insert(RecipeEntity(name = name))
+        items.forEach { (productId, amount, measure) ->
+            db.itemDao().insert(
+                RecipeItemEntity(
+                    recipeId = recipeId,
+                    productId = productId,
+                    amount = amount,
+                    measure = measure
+                )
+            )
+        }
+        return recipeId
+    }
+
     // --- Конвертации ---
 
     suspend fun getAllConversions(): List<UnitConversionEntity> {

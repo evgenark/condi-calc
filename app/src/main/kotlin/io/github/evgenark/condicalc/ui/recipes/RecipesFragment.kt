@@ -1,5 +1,6 @@
 package io.github.evgenark.condicalc.ui.recipes
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.Fragment
@@ -16,6 +17,9 @@ class RecipesFragment : Fragment(R.layout.fragment_recipes) {
         val list = view.findViewById<RecyclerView>(R.id.recipeList)
         list.layoutManager = LinearLayoutManager(requireContext())
         list.adapter = RecipeAdapter(mutableListOf())
+        view.findViewById<View>(R.id.addRecipeBtn).setOnClickListener {
+            startActivity(Intent(requireContext(), AddRecipeActivity::class.java))
+        }
     }
 
     override fun onStart() {
