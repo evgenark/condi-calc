@@ -41,6 +41,7 @@ data class RecipeItemEntity(
     val recipeId: Long,
     val productId: Long,
     val amount: Double,        // количество в единицах продукта (как в Ingredient)
+    val measure: String = "",   // "" — в единицах продукта, иначе имя меры из настроек
 )
 
 // Справочник конвертаций: «стакан», «ст. л.» и т.п. — сколько это граммов

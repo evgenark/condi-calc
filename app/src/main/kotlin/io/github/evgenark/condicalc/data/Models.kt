@@ -22,11 +22,27 @@ data class Product(
         get() = if (packAmount > 0) packPrice / packAmount else 0.0
 }
 
+
 data class Ingredient(
     val product: Product,
-    var amount: Double,             // количество в единицах продукта
+    var amount: Double,
+    var measure: String = "",   // "" — в единицах продукта
 ) {
-    val cost get() = amount * product.pricePerUnit
+    var grams: Double? = null   // граммы заполняет репозиторий по конвертациям
+
+    val cost: Double
+        get() = when {
+            measure.isEmpty() -> amount * product.pricePerUnit
+            else -> {
+                val g = grams ?: 0.0
+                val perGram = when (product.unit) {
+                    Unit.G  -> product.packPrice / product.packAmount
+                    Unit.KG -> product.packPrice / (product.packAmount * 1000)
+                    else -> 0.0  // шт/л/мл в граммы не переводим — цена через конвертацию не считается
+                }
+                g * perGram
+            }
+        }
 }
 
 data class Recipe(

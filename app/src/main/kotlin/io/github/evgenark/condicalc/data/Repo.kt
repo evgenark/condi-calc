@@ -89,14 +89,36 @@ object Repo {
     suspend fun getRecipeIngredients(recipeId: Long): List<Ingredient> {
         val db = DatabaseProvider.get(ApplicationHolder.context)
         val items = db.itemDao().getByRecipe(recipeId)
+        if (items.isEmpty()) return emptyList()
+
         val productsById = db.productDao().getAll().associateBy { it.id }
+        val convByName = db.conversionDao().getAll().associateBy { it.name.lowercase() }
+        val refsByPair = db.refDao().getAll()
+            .associate { (it.productId to it.conversionId) to it.quantity }
+
         return items.mapNotNull { item ->
-            productsById[item.productId]?.let { entity ->
-                Ingredient(product = entityToModel(entity), amount = item.amount)
+            val entity = productsById[item.productId] ?: return@mapNotNull null
+            val product = entityToModel(entity)
+            val ing = Ingredient(product = product, amount = item.amount, measure = item.measure)
+
+            if (item.measure.isEmpty()) {
+    // Количество в единицах продукта — граммы выводим, где можем
+                ing.grams = when (product.unit) {
+                    Unit.G  -> item.amount
+                    Unit.KG -> item.amount * 1000
+                    else -> null
+                }
+            } else {
+    // Мера из настроек: персональный вес продукта или дефолт меры
+                convByName[item.measure.lowercase()]?.let { conv ->
+                    val perMeasure = refsByPair[item.productId to conv.id] ?: conv.grams
+                    ing.grams = item.amount * perMeasure
+                }
             }
+            ing
         }
     }
-
+    
     // --- Конвертации ---
 
     suspend fun getAllConversions(): List<UnitConversionEntity> {

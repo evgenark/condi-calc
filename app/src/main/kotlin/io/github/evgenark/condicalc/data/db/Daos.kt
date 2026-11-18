@@ -78,5 +78,8 @@ interface UnitConversionRefDao {
     @Query("DELETE FROM unit_conversion_refs WHERE productId = :productId")
     suspend fun deleteByProduct(productId: Long)
 
+    @Query("SELECT * FROM unit_conversion_refs")
+    suspend fun getAll(): List<UnitConversionRefEntity>
+
     @Delete suspend fun delete(ref: UnitConversionRefEntity)
 }
