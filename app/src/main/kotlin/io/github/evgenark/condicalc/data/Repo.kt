@@ -97,11 +97,27 @@ object Repo {
         }
     }
 
-    // --- Конвертации (заготовка) ---
+    // --- Конвертации ---
 
     suspend fun getAllConversions(): List<UnitConversionEntity> {
         val db = DatabaseProvider.get(ApplicationHolder.context)
         return db.conversionDao().getAll()
+    }
+
+    suspend fun saveConversion(name: String, grams: Double): Long {
+        val db = DatabaseProvider.get(ApplicationHolder.context)
+        return db.conversionDao().insert(UnitConversionEntity(name = name, grams = grams))
+    }
+
+    suspend fun updateConversion(conversion: UnitConversionEntity) {
+        val db = DatabaseProvider.get(ApplicationHolder.context)
+        db.conversionDao().update(conversion)
+    }
+
+    suspend fun deleteConversion(conversion: UnitConversionEntity) {
+        val db = DatabaseProvider.get(ApplicationHolder.context)
+        db.refDao().deleteByConversion(conversion.id) // чистим привязки продуктов
+        db.conversionDao().delete(conversion)
     }
 
     // --- Хелперы конвертации ---

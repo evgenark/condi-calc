@@ -2,5 +2,7 @@
     <string name="app_name">CondiCalc</string>
     <string name="hello">Привет, кондитер!</string>
     <string name="btn">Нажми меня</string>
+    <string name="settings_conversions">Меры измерения (конвертации)</string>
+    <string name="add_conversion">Добавить меру</string>
 </resources>
 
