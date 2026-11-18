@@ -70,7 +70,7 @@ data class UnitConversionEntity(
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index(value = ["conversionId"])]
+    indices = [Index(value = ["productId", "conversionId"]), Index(value = ["conversionId"])]
 )
 data class UnitConversionRefEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
