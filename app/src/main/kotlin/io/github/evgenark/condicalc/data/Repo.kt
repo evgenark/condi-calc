@@ -120,6 +120,21 @@ object Repo {
         db.conversionDao().delete(conversion)
     }
 
+    suspend fun getRefsForProduct(productId: Long): List<UnitConversionRefEntity> {
+        val db = DatabaseProvider.get(ApplicationHolder.context)
+        return db.refDao().getByProduct(productId)
+    }
+
+    suspend fun saveProductRefs(productId: Long, values: Map<Long, Double>) {
+        val db = DatabaseProvider.get(ApplicationHolder.context)
+        db.refDao().deleteByProduct(productId)
+        if (values.isNotEmpty()) {
+            db.refDao().insertAll(values.map { (convId, grams) ->
+                UnitConversionRefEntity(conversionId = convId, productId = productId, quantity = grams)
+            })
+        }
+    }
+
     // --- Хелперы конвертации ---
 
     private fun entityToModel(e: ProductEntity): Product {

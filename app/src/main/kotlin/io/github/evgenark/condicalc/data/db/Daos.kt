@@ -1,4 +1,3 @@
-
 package io.github.evgenark.condicalc.data.db
 
 import androidx.room.Dao
@@ -75,6 +74,9 @@ interface UnitConversionRefDao {
 
     @Query("DELETE FROM unit_conversion_refs WHERE conversionId = :conversionId")
     suspend fun deleteByConversion(conversionId: Long)
+
+    @Query("DELETE FROM unit_conversion_refs WHERE productId = :productId")
+    suspend fun deleteByProduct(productId: Long)
 
     @Delete suspend fun delete(ref: UnitConversionRefEntity)
 }
