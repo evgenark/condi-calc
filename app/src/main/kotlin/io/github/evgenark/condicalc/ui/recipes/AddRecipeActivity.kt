@@ -21,6 +21,7 @@ import io.github.evgenark.condicalc.R
 import io.github.evgenark.condicalc.data.Product
 import io.github.evgenark.condicalc.data.Repo
 import io.github.evgenark.condicalc.data.Unit
+import io.github.evgenark.condicalc.data.db.UnitConversionEntity
 import kotlinx.coroutines.launch
 
 class AddRecipeActivity : AppCompatActivity() {
@@ -53,7 +54,8 @@ class AddRecipeActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.addIngredientBtn).setOnClickListener {
             rows.add(Row())
-            adapter?.notifyDataSetChanged(row.size = 1)
+            adapter?.notifyItemInserted(rows.size - 1)
+            updateTotal()
         }
         findViewById<Button>(R.id.saveRecipeBtn).setOnClickListener { save() }
 
@@ -102,20 +104,17 @@ class AddRecipeActivity : AppCompatActivity() {
             finish()
         }
     }
-    
+
     private fun updateTotal() {
         var total = 0.0
         for (row in rows) {
             val product = products.firstOrNull { it.id == row.productId } ?: continue
             val amount = row.amountText.replace(',', '.').toDoubleOrNull() ?: continue
             total += if (row.measure.isEmpty()) {
-                // В единицах продукта: шт, л, мл, г — цена за единицу из упаковки
                 amount * (product.packPrice / product.packAmount)
             } else {
                 val conv = convByName[row.measure.lowercase()] ?: continue
                 val perMeasure = refsByPair[row.productId to conv.id] ?: conv.grams
-                // Цена за грамм есть только у продуктов в г/кг;
-                // литры и миллилитры мерой в граммы не переводим — как договаривались
                 val perGram = when (product.unit) {
                     Unit.G -> product.packPrice / product.packAmount
                     Unit.KG -> product.packPrice / (product.packAmount * 1000)
@@ -176,35 +175,6 @@ class AddRecipeActivity : AppCompatActivity() {
             }
         }
 
-        override fun onBindViewHolder(holder: VH, position: Int) {
-            val row = rows[position]
-
-            // СНАЧАЛА перепривязываем холдер к строке, ПОТОМ трогаем view —
-            // иначе setText/setSelection вызовут лисенер, и он запишет значение в чужую строку
-            holder.row = row
-
-            holder.productSpinner.adapter = productAdapterFor(holder)
-            val productPos = products.indexOfFirst { it.id == row.productId }
-            holder.productSpinner.setSelection(if (productPos >= 0) productPos else 0, false)
-
-            holder.measureSpinner.adapter = measureAdapterFor(holder)
-            val measurePos = measureNames.indexOf(row.measure)
-            holder.measureSpinner.setSelection(if (measurePos >= 0) measurePos else 0, false)
-
-            holder.amountInput.setText(row.amountText)
-         }
-
-         private fun productAdapterFor(holder: VH): ArrayAdapter<String> {
-            if (holder.productSpinner.adapter == null) {
-                holder.productSpinner.adapter = ArrayAdapter(
-                    this@AddRecipeActivity,
-                    android.R.layout.simple_spinner_dropdown_item,
-                    products.map { it.name }
-                )
-            }
-            return holder.productSpinner.adapter as ArrayAdapter<String>
-        }
-
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = VH(
             LayoutInflater.from(parent.context)
                 .inflate(R.layout.item_ingredient_edit, parent, false)
@@ -215,62 +185,44 @@ class AddRecipeActivity : AppCompatActivity() {
         override fun onBindViewHolder(holder: VH, position: Int) {
             val row = rows[position]
 
+            // СНАЧАЛА перепривязываем холдер к строке, ПОТОМ трогаем view —
+            // иначе setText/setSelection вызовут лисенер, и он запишет значение в чужую строку
+            holder.row = row
+
             // --- Продукт ---
-            val productAdapter = ArrayAdapter(
-                this@AddRecipeActivity,
-                android.R.layout.simple_spinner_dropdown_item,
-                products.map { it.name }
-            )
-            holder.productSpinner.adapter = productAdapter
+            holder.productSpinner.adapter = productAdapterFor(holder)
             val productPos = products.indexOfFirst { it.id == row.productId }
             holder.productSpinner.setSelection(if (productPos >= 0) productPos else 0, false)
-            holder.productSpinner.onItemSelectedListener =
-                object : android.widget.AdapterView.OnItemSelectedListener {
-                    override fun onItemSelected(parent: AdapterView<*>?, view: View?, pos: Int, id: Long) {
-                        if (pos in products.indices) row.productId = products[pos].id
-                    }
-                    override fun onNothingSelected(parent: AdapterView<*>?) {}
-                }
 
             // --- Мера ---
-            val measureAdapter = ArrayAdapter(
-                this@AddRecipeActivity,
-                android.R.layout.simple_spinner_dropdown_item,
-                measureNames.map { if (it.isEmpty()) "— (шт, г, кг)" else it }
-            )
-            holder.measureSpinner.adapter = measureAdapter
+            holder.measureSpinner.adapter = measureAdapterFor(holder)
             val measurePos = measureNames.indexOf(row.measure)
             holder.measureSpinner.setSelection(if (measurePos >= 0) measurePos else 0, false)
-            holder.measureSpinner.onItemSelectedListener =
-                object : android.widget.AdapterView.OnItemSelectedListener {
-                    override fun onItemSelected(parent: AdapterView<*>?, view: View?, pos: Int, id: Long) {
-                        if (pos in measureNames.indices) row.measure = measureNames[pos]
-                    }
-                    override fun onNothingSelected(parent: AdapterView<*>?) {}
-                }
 
             // --- Количество ---
             holder.amountInput.setText(row.amountText)
-            if (holder.amountInput.tag == null) {
-                holder.amountInput.tag = true
-                holder.amountInput.addTextChangedListener(object : TextWatcher {
-                    override fun afterTextChanged(s: Editable?) {
-                        row.amountText = s?.toString() ?: ""
-                    }
-                    override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
-                    override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
-                })
-            }
+        }
 
-            // --- Удаление строки ---
-            holder.deleteBtn.setOnClickListener {
-                if (rows.size > 1) {
-                    rows.removeAt(position)
-                    adapter?.notifyDataSetChanged()
-                } else {
-                    Toast.makeText(this@AddRecipeActivity, "Нужен хотя бы один ингредиент", Toast.LENGTH_SHORT).show()
-                }
+        private fun productAdapterFor(holder: VH): ArrayAdapter<String> {
+            if (holder.productSpinner.adapter == null) {
+                holder.productSpinner.adapter = ArrayAdapter(
+                    this@AddRecipeActivity,
+                    android.R.layout.simple_spinner_dropdown_item,
+                    products.map { it.name }
+                )
             }
+            return holder.productSpinner.adapter as ArrayAdapter<String>
+        }
+
+        private fun measureAdapterFor(holder: VH): ArrayAdapter<String> {
+            if (holder.measureSpinner.adapter == null) {
+                holder.measureSpinner.adapter = ArrayAdapter(
+                    this@AddRecipeActivity,
+                    android.R.layout.simple_spinner_dropdown_item,
+                    measureNames.map { if (it.isEmpty()) "— (шт, г, кг)" else it }
+                )
+            }
+            return holder.measureSpinner.adapter as ArrayAdapter<String>
         }
     }
 }

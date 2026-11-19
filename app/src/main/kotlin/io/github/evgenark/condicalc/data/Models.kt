@@ -46,6 +46,7 @@ data class Ingredient(
 }
 
 data class Recipe(
+    val id: Long = 0L,
     val name: String,
     val ingredients: MutableList<Ingredient>,
 ) {
