@@ -153,6 +153,14 @@ object Repo {
         }
         return recipeId
     }
+    
+    suspend fun getAllRefs(): List<UnitConversionRefEntity> {
+        val db = DatabaseProvider.get(ApplicationHolder.context)
+        return db.refDao().getAll()
+    }
+
+    suspend fun getRecipeTotal(recipeId: Long): Double =
+        getRecipeIngredients(recipeId).sumOf { it.cost }
 
     // --- Конвертации ---
 

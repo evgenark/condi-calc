@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.RecyclerView
 import io.github.evgenark.condicalc.R
 import io.github.evgenark.condicalc.data.Product
 import io.github.evgenark.condicalc.data.Repo
+import io.github.evgenark.condicalc.data.Unit
 import kotlinx.coroutines.launch
 
 class AddRecipeActivity : AppCompatActivity() {
@@ -34,10 +35,14 @@ class AddRecipeActivity : AppCompatActivity() {
     private val measureNames = mutableListOf<String>()
     private val rows = mutableListOf<Row>()
     private var adapter: RowAdapter? = null
+    private var convByName: Map<String, UnitConversionEntity> = emptyMap()
+    private var refsByPair: Map<Pair<Long, Long>, Double> = emptyMap()
+    private lateinit var totalText: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_recipe)
+        totalText = findViewById(R.id.totalText)
 
         val list = findViewById<RecyclerView>(R.id.ingredientEditList)
         adapter = RowAdapter()
@@ -48,7 +53,7 @@ class AddRecipeActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.addIngredientBtn).setOnClickListener {
             rows.add(Row())
-            adapter?.notifyDataSetChanged()
+            adapter?.notifyDataSetChanged(row.size = 1)
         }
         findViewById<Button>(R.id.saveRecipeBtn).setOnClickListener { save() }
 
@@ -60,10 +65,14 @@ class AddRecipeActivity : AppCompatActivity() {
         products.addAll(Repo.getAllProducts())
 
         measureNames.clear()
-        measureNames.add("") // «—» = в единицах продукта
+        measureNames.add("")
         measureNames.addAll(Repo.getAllConversions().map { it.name })
 
+        convByName = Repo.getAllConversions().associateBy { it.name.lowercase() }
+        refsByPair = Repo.getAllRefs().associate { (it.productId to it.conversionId) to it.quantity }
+
         adapter?.notifyDataSetChanged()
+        updateTotal()
     }
 
     private fun save() {
@@ -93,6 +102,30 @@ class AddRecipeActivity : AppCompatActivity() {
             finish()
         }
     }
+    
+    private fun updateTotal() {
+        var total = 0.0
+        for (row in rows) {
+            val product = products.firstOrNull { it.id == row.productId } ?: continue
+            val amount = row.amountText.replace(',', '.').toDoubleOrNull() ?: continue
+            total += if (row.measure.isEmpty()) {
+                // В единицах продукта: шт, л, мл, г — цена за единицу из упаковки
+                amount * (product.packPrice / product.packAmount)
+            } else {
+                val conv = convByName[row.measure.lowercase()] ?: continue
+                val perMeasure = refsByPair[row.productId to conv.id] ?: conv.grams
+                // Цена за грамм есть только у продуктов в г/кг;
+                // литры и миллилитры мерой в граммы не переводим — как договаривались
+                val perGram = when (product.unit) {
+                    Unit.G -> product.packPrice / product.packAmount
+                    Unit.KG -> product.packPrice / (product.packAmount * 1000)
+                    else -> 0.0
+                }
+                amount * perMeasure * perGram
+            }
+        }
+        totalText.text = "Итого: %.0f ₽".format(total)
+    }
 
     private inner class RowAdapter : RecyclerView.Adapter<RowAdapter.VH>() {
 
@@ -101,6 +134,75 @@ class AddRecipeActivity : AppCompatActivity() {
             val amountInput: EditText = v.findViewById(R.id.amountInput)
             val measureSpinner: Spinner = v.findViewById(R.id.measureSpinner)
             val deleteBtn: TextView = v.findViewById(R.id.deleteRowBtn)
+
+            var row: Row? = null  // строка, к которой холдер привязан СЕЙЧАС
+
+            init {
+                amountInput.addTextChangedListener(object : TextWatcher {
+                    override fun afterTextChanged(s: Editable?) {
+                        row?.amountText = s?.toString() ?: ""
+                        updateTotal()
+                    }
+                    override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+                    override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+                })
+
+                productSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                    override fun onItemSelected(parent: AdapterView<*>?, view: View?, pos: Int, id: Long) {
+                        if (pos in products.indices) row?.productId = products[pos].id
+                        updateTotal()
+                    }
+                    override fun onNothingSelected(parent: AdapterView<*>?) {}
+                }
+
+                measureSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                    override fun onItemSelected(parent: AdapterView<*>?, view: View?, pos: Int, id: Long) {
+                        if (pos in measureNames.indices) row?.measure = measureNames[pos]
+                        updateTotal()
+                    }
+                    override fun onNothingSelected(parent: AdapterView<*>?) {}
+                }
+
+                deleteBtn.setOnClickListener {
+                    val pos = bindingAdapterPosition
+                    if (pos != RecyclerView.NO_POSITION && rows.size > 1) {
+                        rows.removeAt(pos)
+                        notifyItemRemoved(pos)
+                        updateTotal()
+                    } else if (rows.size <= 1) {
+                        Toast.makeText(this@AddRecipeActivity, "Нужен хотя бы один ингредиент", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+
+        override fun onBindViewHolder(holder: VH, position: Int) {
+            val row = rows[position]
+
+            // СНАЧАЛА перепривязываем холдер к строке, ПОТОМ трогаем view —
+            // иначе setText/setSelection вызовут лисенер, и он запишет значение в чужую строку
+            holder.row = row
+
+            holder.productSpinner.adapter = productAdapterFor(holder)
+            val productPos = products.indexOfFirst { it.id == row.productId }
+            holder.productSpinner.setSelection(if (productPos >= 0) productPos else 0, false)
+
+            holder.measureSpinner.adapter = measureAdapterFor(holder)
+            val measurePos = measureNames.indexOf(row.measure)
+            holder.measureSpinner.setSelection(if (measurePos >= 0) measurePos else 0, false)
+
+            holder.amountInput.setText(row.amountText)
+         }
+
+         private fun productAdapterFor(holder: VH): ArrayAdapter<String> {
+            if (holder.productSpinner.adapter == null) {
+                holder.productSpinner.adapter = ArrayAdapter(
+                    this@AddRecipeActivity,
+                    android.R.layout.simple_spinner_dropdown_item,
+                    products.map { it.name }
+                )
+            }
+            return holder.productSpinner.adapter as ArrayAdapter<String>
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = VH(

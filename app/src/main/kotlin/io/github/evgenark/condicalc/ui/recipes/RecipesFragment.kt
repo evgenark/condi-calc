@@ -27,6 +27,9 @@ class RecipesFragment : Fragment(R.layout.fragment_recipes) {
         view?.findViewById<RecyclerView>(R.id.recipeList)?.let { list ->
             lifecycleScope.launch {
                 val recipes = Repo.getAllRecipes()
+                val totals = recipes.associate { it.id to Repo.getRecipeTotal(it.id) }
+                recipes.forEach { it.totalCost = totals[it.id] ?: 0.0 }
+            }
                 (list.adapter as? RecipeAdapter)?.let { adapter ->
                     adapter.recipes.clear()
                     adapter.recipes.addAll(recipes)

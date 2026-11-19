@@ -20,6 +20,16 @@
         android:paddingEnd="16dp"
         android:text="Ингредиенты:"
         android:textStyle="bold" />
+    <TextView
+        android:id="@+id/totalText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="8dp"
+        android:text="Итого: 0 ₽"
+        android:textStyle="bold"
+        android:textSize="16sp" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/ingredientEditList"
