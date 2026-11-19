@@ -3,9 +3,6 @@ package io.github.evgenark.condicalc.data
 import android.content.Context
 import io.github.evgenark.condicalc.data.db.*
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 object Repo {
     private var isInitialized = false
