@@ -35,7 +35,6 @@ class RecipesFragment : Fragment(R.layout.fragment_recipes) {
                     adapter.recipes.addAll(recipes)
                     adapter.notifyDataSetChanged()
                 }
-            }
         }
     }
 }
