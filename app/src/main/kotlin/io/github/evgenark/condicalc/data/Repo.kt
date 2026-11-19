@@ -3,6 +3,9 @@ package io.github.evgenark.condicalc.data
 import android.content.Context
 import io.github.evgenark.condicalc.data.db.*
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 object Repo {
     private var isInitialized = false
@@ -57,6 +60,25 @@ object Repo {
     suspend fun deleteProduct(id: Long) {
         val db = DatabaseProvider.get(ApplicationHolder.context)
         db.productDao().deleteById(id)
+    }
+
+    suspend fun seedConversionsIfEmpty() {
+        val db = DatabaseProvider.get(ApplicationHolder.context)
+        if (db.conversionDao().getAll().isNotEmpty()) return
+
+        val defaults = listOf(
+            "грамм" to 1.0,
+            "килограмм" to 1000.0,
+            "литр" to 1000.0,
+            "миллилитр" to 1.0,
+            "стакан" to 200.0,
+            "столовая ложка" to 15.0,
+            "чайная ложка" to 5.0,
+            "штук." to 1.0
+        )
+        defaults.forEach { (name, grams) ->
+            db.conversionDao().insert(UnitConversionEntity(name = name, grams = grams))
+        }
     }
 
     // --- Рецепты ---

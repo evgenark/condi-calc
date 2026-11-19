@@ -11,5 +11,8 @@ class CondiCalcApp : Application() {
         super.onCreate()
         ApplicationHolder.context = this
         Repo.init(this)
+        CoroutineScope(Dispatchers.IO).launch {
+            Repo.seedConversionsIfEmpty()
+        }
     }
 }
