@@ -19,7 +19,7 @@ object Repo {
                     ProductEntity(name = "Сахар", unit = "KG", packAmount = 1.0, packPrice = 110.0),
                     ProductEntity(name = "Масло сливочное", unit = "G", packAmount = 180.0, packPrice = 150.0),
                     ProductEntity(name = "Сгущёнка", unit = "G", packAmount = 380.0, packPrice = 95.0),
-                    ProductEntity(name = "Яйца", unit = "PCS", packAmount = 10.0, packPrice = 90.0),
+                    ProductEntity(name = "Яйцо", unit = "PCS", packAmount = 10.0, packPrice = 90.0),
                     ProductEntity(name = "Молоко", unit = "L", packAmount = 1.0, packPrice = 85.0),
                 )
                 defaults.forEach { db.productDao().insert(it) }
@@ -68,8 +68,8 @@ object Repo {
             "килограмм" to 1000.0,
             "литр" to 1000.0,
             "миллилитр" to 1.0,
-            "стакан" to 200.0,
-            "столовая ложка" to 15.0,
+            "стакан" to 250.0,
+            "столовая ложка" to 18.0,
             "чайная ложка" to 5.0,
             "штук." to 1.0
         )
