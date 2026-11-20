@@ -27,5 +27,6 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
         android:contentDescription="Добавить меру"
+        app:fapSize="large"
         android:src="@drawable/ic_add" />
 </FrameLayout>

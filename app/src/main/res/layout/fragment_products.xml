@@ -18,5 +18,6 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
         android:contentDescription="Добавить продукт"
+        app:fapSize="large"
         android:src="@drawable/ic_add" />
 </FrameLayout>
