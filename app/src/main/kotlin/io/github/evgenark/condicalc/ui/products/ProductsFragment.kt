@@ -26,6 +26,9 @@ class ProductsFragment : Fragment(R.layout.fragment_products) {
         }
         list.layoutManager = LinearLayoutManager(requireContext())
         list.adapter = adapter
+        view.findViewById<View>(R.id.addProductBtn).setOnClickListener {
+            startActivity(Intent(requireContext(), EditProductActivity::class.java))
+        }
     }
 
     override fun onStart() {
