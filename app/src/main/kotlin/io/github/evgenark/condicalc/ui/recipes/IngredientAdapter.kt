@@ -31,11 +31,15 @@ class IngredientAdapter(private val items: List<Ingredient>) :
         val unitLabel = if (item.measure.isNotEmpty()) item.measure else item.product.unit.label
         holder.amount.text = "%.1f %s".format(item.amount, unitLabel)
 
+        // Для жидкостей grams — это миллилитры, для массовых — граммы
+        val gLabel = if (item.product.unit.isVolume) "мл" else "г"
+
         val cost = item.cost
         holder.cost.text = when {
-            item.grams != null && cost > 0 -> "%.0f г · %.0f ₽".format(item.grams, cost)
-            item.grams != null -> "%.0f г".format(item.grams)
-            else -> "%.0f ₽".format(cost)
+            item.grams != null && cost > 0 -> "%.0f %s · %.2f ₽".format(item.grams, gLabel, cost)
+            item.grams != null -> "%.0f %s".format(item.grams, gLabel)
+            cost > 0 -> "%.2f ₽".format(cost)          // штучные в единицах продукта
+            else -> "—"                                 // штучные с мерой: цена не считается
         }
     }
 }

@@ -28,7 +28,8 @@ class ProductAdapter(
     override fun onBindViewHolder(holder: VH, position: Int) {
         val product = products[position]
         holder.name.text = product.name
-        holder.price.text = "%.0f ₽/%s".format(product.pricePerUnit, product.unit.label)
+        holder.price.text = "%.2f ₽/%s".format(product.pricePerStd, product.stdUnitLabel)
+        // holder.price.text = "%.0f ₽/%s".format(product.pricePerUnit, product.unit.label)
         holder.itemView.setOnClickListener { onClick(product.id) }
     }
 }

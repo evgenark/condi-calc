@@ -110,20 +110,19 @@ class AddRecipeActivity : AppCompatActivity() {
         for (row in rows) {
             val product = products.firstOrNull { it.id == row.productId } ?: continue
             val amount = row.amountText.replace(',', '.').toDoubleOrNull() ?: continue
-            total += if (row.measure.isEmpty()) {
-                amount * (product.packPrice / product.packAmount)
-            } else {
+
+            val ing = Ingredient(product = product, amount = amount, measure = row.measure)
+            if (row.measure.isNotEmpty()) {
                 val conv = convByName[row.measure.lowercase()] ?: continue
                 val perMeasure = refsByPair[row.productId to conv.id] ?: conv.grams
-                val perGram = when (product.unit) {
-                    Unit.G -> product.packPrice / product.packAmount
-                    Unit.KG -> product.packPrice / (product.packAmount * 1000)
-                    else -> 0.0
+                ing.grams = when (product.unit) {
+                    Unit.G, Unit.KG, Unit.L, Unit.ML -> amount * perMeasure
+                    else -> null   // штучные — считаем только в единицах продукта
                 }
-                amount * perMeasure * perGram
             }
+            total += ing.cost
         }
-        totalText.text = "Итого: %.0f ₽".format(total)
+        totalText.text = "Итого: %.2f ₽".format(total)
     }
 
     private inner class RowAdapter : RecyclerView.Adapter<RowAdapter.VH>() {

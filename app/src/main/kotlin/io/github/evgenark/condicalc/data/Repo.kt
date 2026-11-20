@@ -121,17 +121,18 @@ object Repo {
             val ing = Ingredient(product = product, amount = item.amount, measure = item.measure)
 
             if (item.measure.isEmpty()) {
-    // Количество в единицах продукта — граммы выводим, где можем
                 ing.grams = when (product.unit) {
                     Unit.G  -> item.amount
                     Unit.KG -> item.amount * 1000
                     else -> null
                 }
             } else {
-    // Мера из настроек: персональный вес продукта или дефолт меры
                 convByName[item.measure.lowercase()]?.let { conv ->
                     val perMeasure = refsByPair[item.productId to conv.id] ?: conv.grams
-                    ing.grams = item.amount * perMeasure
+                    ing.grams = when (product.unit) {
+                        Unit.G, Unit.KG, Unit.L, Unit.ML -> item.amount * perMeasure
+                        else -> null   // штучные и прочие — цена только в единицах продукта
+                    }
                 }
             }
             ing

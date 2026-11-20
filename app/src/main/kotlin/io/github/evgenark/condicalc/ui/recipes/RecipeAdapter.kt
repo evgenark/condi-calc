@@ -29,7 +29,7 @@ class RecipeAdapter(val recipes: MutableList<Recipe>) :
     override fun onBindViewHolder(holder: VH, position: Int) {
         val recipe = recipes[position]
         holder.name.text = recipe.name
-        holder.cost.text = "Итого: %.0f ₽".format(recipe.totalCost)
+        holder.cost.text = "Итого: %.2f ₽".format(recipe.totalCost)
         holder.list.isNestedScrollingEnabled = false
         holder.list.layoutManager = LinearLayoutManager(holder.list.context)
         holder.list.adapter = IngredientAdapter(recipe.ingredients)
