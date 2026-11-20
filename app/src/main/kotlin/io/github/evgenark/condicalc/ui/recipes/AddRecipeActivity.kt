@@ -18,6 +18,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import io.github.evgenark.condicalc.R
+import io.github.evgenark.condicalc.data.Ingredient
 import io.github.evgenark.condicalc.data.Product
 import io.github.evgenark.condicalc.data.Repo
 import io.github.evgenark.condicalc.data.Unit
