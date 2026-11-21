@@ -42,7 +42,7 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:paddingBottom="96dp"
+            android:paddingBottom="196dp"
             android:clipToPadding="false" />
     </LinearLayout>
 
@@ -59,8 +59,8 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
             android:contentDescription="Сохранить рецепт"
-            app:fabCustomSize="56dp"
-            app:maxImageSize="28dp"
+            app:fabCustomSize="72dp"
+            app:maxImageSize="40dp"
             app:srcCompat="@drawable/ic_save" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
