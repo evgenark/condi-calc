@@ -82,7 +82,7 @@ object Repo {
 
     suspend fun createRecipe(name: String): Long {
         val db = DatabaseProvider.get(ApplicationHolder.context)
-        return db.recipeDao().insert(RecipeEntity(name = name))
+        return db.recipeDao().insert(RecipeEntity(name = name, createdAt = System.currentTimeMillis())
     }
 
     suspend fun getAllRecipes(): List<Recipe> {
@@ -141,7 +141,7 @@ object Repo {
     
     suspend fun saveRecipe(name: String, items: List<Triple<Long, Double, String>>): Long {
         val db = DatabaseProvider.get(ApplicationHolder.context)
-        val recipeId = db.recipeDao().insert(RecipeEntity(name = name))
+        val recipeId = db.recipeDao().insert(RecipeEntity(name = name, createdAt = System.currentTimeMillis())
         items.forEach { (productId, amount, measure) ->
             db.itemDao().insert(
                 RecipeItemEntity(
