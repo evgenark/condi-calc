@@ -40,10 +40,13 @@ class AddRecipeActivity : AppCompatActivity() {
     private var convByName: Map<String, UnitConversionEntity> = emptyMap()
     private var refsByPair: Map<Pair<Long, Long>, Double> = emptyMap()
     private lateinit var totalText: TextView
+    private var editRecipeId = 0L   // 0 — создание, >0 — редактирование
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_recipe)
+        editRecipeId = intent.getLongExtra("recipe_id", 0L)
+        if (editRecipeId > 0) title = "Редактирование рецепта"
         totalText = findViewById(R.id.totalText)
 
         val list = findViewById<RecyclerView>(R.id.ingredientEditList)
@@ -76,6 +79,24 @@ class AddRecipeActivity : AppCompatActivity() {
 
         adapter?.notifyDataSetChanged()
         updateTotal()
+        if (editRecipeId > 0) {
+            val recipe = Repo.getRecipeById(editRecipeId) ?: return
+            findViewById<EditText>(R.id.recipeNameInput).setText(recipe.name)
+
+            rows.clear()
+            recipe.ingredients.forEach { ing ->
+                rows.add(Row().apply {
+                    productId = ing.product.id
+                    measure = ing.measure
+                    amountText = if (ing.amount % 1.0 == 0.0)
+                        ing.amount.toInt().toString()
+                    else
+                        "%.1f".format(ing.amount)
+                })
+            }
+            adapter?.notifyDataSetChanged()
+            updateTotal()
+        }
     }
 
     private fun save() {
@@ -101,7 +122,7 @@ class AddRecipeActivity : AppCompatActivity() {
         }
 
         lifecycleScope.launch {
-            Repo.saveRecipe(name, items)
+            Repo.saveRecipe(name, items, editRecipeId)
             finish()
         }
     }

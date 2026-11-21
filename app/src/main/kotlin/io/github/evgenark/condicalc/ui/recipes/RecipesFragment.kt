@@ -13,26 +13,31 @@ import kotlinx.coroutines.launch
 
 class RecipesFragment : Fragment(R.layout.fragment_recipes) {
 
+    private val adapter = RecipeAdapter(mutableListOf())
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val list = view.findViewById<RecyclerView>(R.id.recipeList)
         list.layoutManager = LinearLayoutManager(requireContext())
-        list.adapter = RecipeAdapter(mutableListOf())
+        list.adapter = adapter
+
+        adapter.onClick = { recipe ->
+            val intent = Intent(requireContext(), AddRecipeActivity::class.java)
+            intent.putExtra("recipe_id", recipe.id)
+            startActivity(intent)
+        }
+
         view.findViewById<View>(R.id.addRecipeBtn).setOnClickListener {
             startActivity(Intent(requireContext(), AddRecipeActivity::class.java))
         }
     }
 
-    override fun onStart() {
-        super.onStart()
-        view?.findViewById<RecyclerView>(R.id.recipeList)?.let { list ->
-            lifecycleScope.launch {
-                val recipes = Repo.getAllRecipes()
-                (list.adapter as? RecipeAdapter)?.let { adapter ->
-                    adapter.recipes.clear()
-                    adapter.recipes.addAll(recipes)
-                    adapter.notifyDataSetChanged()
-                }
-            }
+    override fun onResume() {
+        super.onResume()
+        viewLifecycleOwner.lifecycleScope.launch {
+            val recipes = Repo.getAllRecipes()
+            adapter.recipes.clear()
+            adapter.recipes.addAll(recipes)
+            adapter.notifyDataSetChanged()
         }
     }
 }

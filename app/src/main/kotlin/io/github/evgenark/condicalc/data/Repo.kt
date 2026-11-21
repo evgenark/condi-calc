@@ -94,6 +94,17 @@ object Repo {
         }
     }
 
+    suspend fun getRecipeById(id: Long): Recipe? {
+        val db = DatabaseProvider.get(ApplicationHolder.context)
+        val entity = db.recipeDao().getById(id) ?: return null
+        return Recipe(
+            id = entity.id,
+            name = entity.name,
+            createdAt = entity.createdAt,
+            ingredients = getRecipeIngredients(entity.id).toMutableList()
+        )
+    }
+
     suspend fun addIngredientToRecipe(recipeId: Long, product: Product, amount: Double) {
         val db = DatabaseProvider.get(ApplicationHolder.context)
         db.itemDao().insert(
@@ -139,22 +150,29 @@ object Repo {
         }
     }
 
-    suspend fun saveRecipe(name: String, items: List<Triple<Long, Double, String>>): Long {
+    suspend fun saveRecipe(name: String, items: List<Triple<Long, Double, String>>, recipeId: Long = 0L): Long {
         val db = DatabaseProvider.get(ApplicationHolder.context)
-        val recipeId = db.recipeDao().insert(
-            RecipeEntity(name = name, createdAt = System.currentTimeMillis())
-        )
+        val id: Long = if (recipeId == 0L) {
+            // новый рецепт
+            db.recipeDao().insert(RecipeEntity(name = name, createdAt = System.currentTimeMillis()))
+        } else {
+            // редактирование: имя обновляем, дату создания сохраняем, ингредиенты перезаписываем
+            val existing = db.recipeDao().getById(recipeId) ?: return 0L
+            db.recipeDao().update(RecipeEntity(id = recipeId, name = name, createdAt = existing.createdAt))
+            db.itemDao().deleteByRecipe(recipeId)
+            recipeId
+        }
         items.forEach { (productId, amount, measure) ->
             db.itemDao().insert(
                 RecipeItemEntity(
-                    recipeId = recipeId,
+                    recipeId = id,
                     productId = productId,
                     amount = amount,
                     measure = measure
                 )
             )
         }
-        return recipeId
+        return id
     }
     
     suspend fun getAllRefs(): List<UnitConversionRefEntity> {

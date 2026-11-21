@@ -12,6 +12,7 @@ import java.util.Date
 import java.util.Locale
 
 class RecipeAdapter(val recipes: MutableList<Recipe>) :
+    var onClick: ((Recipe) -> Unit)? = null
     RecyclerView.Adapter<RecipeAdapter.VH>() {
 
     class VH(v: View) : RecyclerView.ViewHolder(v) {
@@ -34,5 +35,6 @@ class RecipeAdapter(val recipes: MutableList<Recipe>) :
         holder.name.text = recipe.name
         holder.cost.text = "Итого: %.2f ₽".format(recipe.totalCost)
         holder.date.text = if (recipe.createdAt > 0) dateFormat.format(Date(recipe.createdAt)) else ""
+        holder.itemView.setOnClickListener { onClick?.invoke(recipe) }
     }
 }
