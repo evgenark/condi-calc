@@ -11,9 +11,10 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class RecipeAdapter(val recipes: MutableList<Recipe>):
-    var onClick: ((Recipe) -> Unit)? = null
+class RecipeAdapter(val recipes: MutableList<Recipe>) :
     RecyclerView.Adapter<RecipeAdapter.VH>() {
+
+    var onClick: ((Recipe) -> Unit)? = null
 
     class VH(v: View) : RecyclerView.ViewHolder(v) {
         val name: TextView = v.findViewById(R.id.recipeName)
