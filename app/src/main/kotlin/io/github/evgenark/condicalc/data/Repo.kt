@@ -138,10 +138,12 @@ object Repo {
             ing
         }
     }
-    
+
     suspend fun saveRecipe(name: String, items: List<Triple<Long, Double, String>>): Long {
         val db = DatabaseProvider.get(ApplicationHolder.context)
-        val recipeId = db.recipeDao().insert(RecipeEntity(name = name, createdAt = System.currentTimeMillis())
+        val recipeId = db.recipeDao().insert(
+            RecipeEntity(name = name, createdAt = System.currentTimeMillis())
+        )
         items.forEach { (productId, amount, measure) ->
             db.itemDao().insert(
                 RecipeItemEntity(
@@ -151,8 +153,8 @@ object Repo {
                     measure = measure
                 )
             )
-        },
-        return recipeId)
+        }
+        return recipeId
     }
     
     suspend fun getAllRefs(): List<UnitConversionRefEntity> {
