@@ -82,7 +82,7 @@ object Repo {
 
     suspend fun createRecipe(name: String): Long {
         val db = DatabaseProvider.get(ApplicationHolder.context)
-        return db.recipeDao().insert(RecipeEntity(name = name, createdAt = System.currentTimeMillis())
+        return db.recipeDao().insert(RecipeEntity(name = name, createdAt = System.currentTimeMillis()))
     }
 
     suspend fun getAllRecipes(): List<Recipe> {
@@ -151,8 +151,8 @@ object Repo {
                     measure = measure
                 )
             )
-        }
-        return recipeId
+        },
+        return recipeId)
     }
     
     suspend fun getAllRefs(): List<UnitConversionRefEntity> {
