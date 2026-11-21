@@ -8,7 +8,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
-import android.widget.Button
 import android.widget.EditText
 import android.widget.Spinner
 import android.widget.TextView
@@ -17,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import io.github.evgenark.condicalc.R
 import io.github.evgenark.condicalc.data.Ingredient
 import io.github.evgenark.condicalc.data.Product
@@ -58,12 +58,12 @@ class AddRecipeActivity : AppCompatActivity() {
         // Первую строку добавляем НЕ здесь, а после загрузки справочников —
         // и только при создании рецепта
 
-        findViewById<Button>(R.id.addIngredientBtn).setOnClickListener {
+        findViewById<FloatingActionButton>(R.id.addIngredientBtn).setOnClickListener {
             rows.add(Row())
             adapter?.notifyItemInserted(rows.size - 1)
             updateTotal()
         }
-        findViewById<Button>(R.id.saveRecipeBtn).setOnClickListener { save() }
+        findViewById<FloatingActionButton>(R.id.saveRecipeBtn).setOnClickListener { save() }
 
         lifecycleScope.launch { loadDictionaries() }
     }
