@@ -90,7 +90,7 @@ object Repo {
         val recipeEntities = db.recipeDao().getAll()
         return recipeEntities.map { entity ->
             val items = getRecipeIngredients(entity.id)
-            Recipe(id = entity.id, name = entity.name, ingredients = items.toMutableList())
+            Recipe(id = entity.id, name = entity.name, createdAt = entity.createdAt, ingredients = items.toMutableList())
         }
     }
 

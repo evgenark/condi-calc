@@ -15,7 +15,7 @@ object DatabaseProvider {
                 AppDatabase::class.java,
                 "condi_calc.db"
             )
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 .build()
         }
         return _db!!

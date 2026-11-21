@@ -7,17 +7,30 @@ import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import io.github.evgenark.condicalc.R
-import io.github.evgenark.condicalc.data.Ingredient
 import io.github.evgenark.condicalc.data.Recipe
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class RecipeAdapter(val recipes: MutableList<Recipe>) :
     RecyclerView.Adapter<RecipeAdapter.VH>() {
 
-    class VH(v: View) : RecyclerView.ViewHolder(v) {
+    inner class VH(v: View) : RecyclerView.ViewHolder(v) {
         val name: TextView = v.findViewById(R.id.recipeName)
         val cost: TextView = v.findViewById(R.id.recipeCost)
-        val list: RecyclerView = v.findViewById(R.id.ingredientList)
+        val date: TextView = v.findViewById(R.id.recipeDate)
+        val ingAdapter = IngredientAdapter(mutableListOf())
+
+        init {
+            v.findViewById<RecyclerView>(R.id.ingredientList).apply {
+                layoutManager = LinearLayoutManager(v.context)
+                adapter = ingAdapter
+                isNestedScrollingEnabled = false
+            }
+        }
     }
+
+    private val dateFormat = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = VH(
         LayoutInflater.from(parent.context)
@@ -30,9 +43,7 @@ class RecipeAdapter(val recipes: MutableList<Recipe>) :
         val recipe = recipes[position]
         holder.name.text = recipe.name
         holder.cost.text = "Итого: %.2f ₽".format(recipe.totalCost)
-        holder.list.isNestedScrollingEnabled = false
-        holder.list.layoutManager = LinearLayoutManager(holder.list.context)
-        holder.list.adapter = IngredientAdapter(recipe.ingredients)
+        holder.date.text = if (recipe.createdAt > 0) dateFormat.format(Date(recipe.createdAt)) else ""
+        holder.ingAdapter.update(recipe.ingredients)
     }
 }
-

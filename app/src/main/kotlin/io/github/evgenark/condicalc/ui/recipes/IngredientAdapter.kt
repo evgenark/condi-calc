@@ -8,7 +8,7 @@ import androidx.recyclerview.widget.RecyclerView
 import io.github.evgenark.condicalc.R
 import io.github.evgenark.condicalc.data.Ingredient
 
-class IngredientAdapter(private val items: List<Ingredient>) :
+class IngredientAdapter(private val items: MutableList<Ingredient>) :
     RecyclerView.Adapter<IngredientAdapter.VH>() {
 
     class VH(v: View) : RecyclerView.ViewHolder(v) {
@@ -41,5 +41,11 @@ class IngredientAdapter(private val items: List<Ingredient>) :
             cost > 0 -> "%.2f ₽".format(cost)          // штучные в единицах продукта
             else -> "—"                                 // штучные с мерой: цена не считается
         }
+    }
+
+    fun update(newItems: List<Ingredient>) {
+        items.clear()
+        items.addAll(newItems)
+        notifyDataSetChanged()
     }
 }

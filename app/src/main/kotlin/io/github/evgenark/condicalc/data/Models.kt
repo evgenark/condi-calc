@@ -64,6 +64,7 @@ data class Ingredient(
 data class Recipe(
     val id: Long = 0L,
     val name: String,
+    val createdAt: Long = 0,
     val ingredients: MutableList<Ingredient>,
 ) {
     val totalCost get() = ingredients.sumOf { it.cost }
