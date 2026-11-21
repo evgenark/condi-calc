@@ -11,7 +11,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class RecipeAdapter(val recipes: MutableList<Recipe>) :
+class RecipeAdapter(val recipes: MutableList<Recipe>) 
     var onClick: ((Recipe) -> Unit)? = null
     RecyclerView.Adapter<RecipeAdapter.VH>() {
 
