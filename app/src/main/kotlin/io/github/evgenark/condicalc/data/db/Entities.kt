@@ -5,7 +5,8 @@ import androidx.room.Index
 import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "products")
+@Entity(
+    tableName = "products")
 data class ProductEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
@@ -14,7 +15,8 @@ data class ProductEntity(
     val packPrice: Double,     // цена упаковки
 )
 
-@Entity(tableName = "recipes")
+@Entity(
+    tableName = "recipes")
 data class RecipeEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
@@ -46,8 +48,15 @@ data class RecipeItemEntity(
     val measure: String = "",   // "" — в единицах продукта, иначе имя меры из настроек
 )
 
+@Entity(
+    tableName = "recipe_ingredients",
+    foreignKeys = [/* ...как было... */],
+    indeces = [Index("recipeId")]
+)
+
 // Справочник конвертаций: «стакан», «ст. л.» и т.п. — сколько это граммов
-@Entity(tableName = "unit_conversions")
+@Entity(
+    tableName = "unit_conversions")
 data class UnitConversionEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,

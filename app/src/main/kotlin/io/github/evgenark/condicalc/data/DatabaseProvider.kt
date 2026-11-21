@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.room.Room
 import io.github.evgenark.condicalc.data.db.AppDatabase
 import io.github.evgenark.condicalc.data.db.MIGRATION_1_2
+import io.github.evgenark.condicalc.data.db.MIGRATION_2_3
 object DatabaseProvider {
     private var _db: AppDatabase? = null
 
