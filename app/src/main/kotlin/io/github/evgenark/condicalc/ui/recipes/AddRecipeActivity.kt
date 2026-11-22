@@ -347,7 +347,7 @@ class AddRecipeActivity : AppCompatActivity() {
 
     // Адаптер мер: список под конкретную строку, без фильтрации
     private inner class MeasureAdapter :
-        ArrayAdapter<MeasureOption>(this@AddRecipeActivity, android.R.layout.simple_list_item_1) {
+        ArrayAdapter<String>(this@AddRecipeActivity, android.R.layout.simple_list_item_1) {
 
         var options: List<MeasureOption> = emptyList()
 
