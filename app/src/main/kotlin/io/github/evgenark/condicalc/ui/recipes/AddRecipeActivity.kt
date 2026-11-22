@@ -277,7 +277,7 @@ class AddRecipeActivity : AppCompatActivity() {
         }
 
         private fun bindMeasure(holder: VH, row: Row) {
-            holder.measureAdapter.setOptions(measureOptionsFor(row))
+            holder.measureAdapter.submitOptions(measureOptionsFor(row))
             holder.measureInput.setText(labelForMeasure(row), false)
         }
 
@@ -351,7 +351,7 @@ class AddRecipeActivity : AppCompatActivity() {
 
         var options: List<MeasureOption> = emptyList()
 
-        fun setOptions(list: List<MeasureOption>) {
+        fun submitOptions(list: List<MeasureOption>) {
             options = list
             notifyDataSetChanged()
         }
