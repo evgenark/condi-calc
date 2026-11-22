@@ -7,8 +7,8 @@ enum class Unit(val label: String, val isMass: Boolean) {
     L("л", false),
     ML("мл", false),
     PCS("шт", false),
-    TSP("ч. л.", false),
-    TBSP("ст. л.", false),
+    TSP("ч.л", false),
+    TBSP("ст.л", false),
     CUP("стакан", false);
 
     val isVolume: Boolean get() = this == L || this == ML
