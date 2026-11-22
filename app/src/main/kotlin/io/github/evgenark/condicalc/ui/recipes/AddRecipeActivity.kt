@@ -300,7 +300,10 @@ class AddRecipeActivity : AppCompatActivity() {
             bindMeasure(holder, row)
 
             // --- Количество и стоимость ---
-            holder.amountInput.setText(row.amountText)
+            if (holder.amountInput.text.toString() != row.amountText) {
+                holder.amountInput.setText(row.amountText)
+                holder.amountInput.setSelection(holder.amountInput.text.length)
+            }
             holder.costText.text = row.costLabel
         }
     }
