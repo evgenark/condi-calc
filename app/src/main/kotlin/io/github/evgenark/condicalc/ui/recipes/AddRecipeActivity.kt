@@ -141,6 +141,8 @@ class AddRecipeActivity : AppCompatActivity() {
         measureInput.threshold = 1
         measureInput.setOnClickListener { measureInput.showDropDown() }
 
+        productInput.setText(productOf(row)?.name ?: "", false)
+
         fun bindMeasure() {
             measureAdapter.submitOptions(measureOptionsFor(row))
             measureInput.setText(labelForMeasure(row), false)
@@ -226,7 +228,7 @@ class AddRecipeActivity : AppCompatActivity() {
         Unit.KG -> "кг"
         Unit.L -> "л"
         Unit.ML -> "мл"
-        else -> "шт."
+        else -> "шт"
     }
 
     private fun productOf(row: Row): Product? = products.firstOrNull { it.id == row.productId }
