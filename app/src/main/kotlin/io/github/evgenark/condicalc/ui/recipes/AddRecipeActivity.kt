@@ -174,20 +174,6 @@ class AddRecipeActivity : AppCompatActivity() {
         val sheet = BottomSheetDialog(this)
         val v = layoutInflater.inflate(R.layout.sheet_ingredient_edit, null)
         sheet.setContentView(v)
-        ViewCompat.setOnApplyWindowInsetsListener(v) { _, insets ->
-            val imeVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
-            if (imeVisible) {
-                if (productInput.isPopupShowing) {
-                    productInput.dismissDropDown()
-                    productInput.post { productInput.showDropDown() }
-                }
-                if (measureInput.isPopupShowing) {
-                    measureInput.dismissDropDown()
-                    measureInput.post { measureInput.showDropDown() }
-                }
-            }
-            insets
-        }
 
         val productInput = v.findViewById<AutoCompleteTextView>(R.id.sheetProductInput)
         val amountInput = v.findViewById<EditText>(R.id.sheetAmountInput)
@@ -203,6 +189,21 @@ class AddRecipeActivity : AppCompatActivity() {
         measureInput.setAdapter(measureAdapter)
         measureInput.threshold = 1
         measureInput.setOnClickListener { measureInput.showDropDown() }
+
+        ViewCompat.setOnApplyWindowInsetsListener(v) { _, insets ->
+            val imeVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
+            if (imeVisible) {
+                if (productInput.isPopupShowing) {
+                    productInput.dismissDropDown()
+                    productInput.post { productInput.showDropDown() }
+                }
+                if (measureInput.isPopupShowing) {
+                    measureInput.dismissDropDown()
+                    measureInput.post { measureInput.showDropDown() }
+                }
+            }
+            insets
+        }
 
         productInput.setText(productOf(row)?.name ?: "", false)
 
