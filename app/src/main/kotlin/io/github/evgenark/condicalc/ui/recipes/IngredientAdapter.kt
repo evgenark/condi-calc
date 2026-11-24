@@ -6,46 +6,50 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import io.github.evgenark.condicalc.R
-import io.github.evgenark.condicalc.data.Ingredient
+import java.text.DecimalFormat
+import java.util.Locale
 
-class IngredientAdapter(private val items: MutableList<Ingredient>) :
-    RecyclerView.Adapter<IngredientAdapter.VH>() {
+class IngredientAdapter(
+    private val onClick: (Int) -> Unit,
+    private val onDelete: (Int) -> Unit,
+) : RecyclerView.Adapter<IngredientAdapter.VH>() {
+
+    val items = mutableListOf<RecipeIngredient>()
+
+    fun submit(list: List<RecipeIngredient>) {
+        items.clear()
+        items.addAll(list)
+        notifyDataSetChanged()
+    }
 
     class VH(v: View) : RecyclerView.ViewHolder(v) {
-        val name: TextView = v.findViewById(R.id.ingName)
-        val amount: TextView = v.findViewById(R.id.ingAmount)
-        val cost: TextView = v.findViewById(R.id.ingCost)
+        val name: TextView = v.findViewById(R.id.ingredientName)
+        val details: TextView = v.findViewById(R.id.ingredientDetails)
+        val cost: TextView = v.findViewById(R.id.ingredientCost)
+        val delete: View = v.findViewById(R.id.deleteButton)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = VH(
         LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_ingredient_row, parent, false)
+            .inflate(R.layout.item_ingredient, parent, false)
     )
 
     override fun getItemCount() = items.size
 
     override fun onBindViewHolder(holder: VH, position: Int) {
-        val item = items[position]
-        holder.name.text = item.product.name
-
-        val unitLabel = if (item.measure.isNotEmpty()) item.measure else item.product.unit.label
-        holder.amount.text = "%.1f %s".format(item.amount, unitLabel)
-
-        // Для жидкостей grams — это миллилитры, для массовых — граммы
-        val gLabel = if (item.product.unit.isVolume) "мл" else "г"
-
-        val cost = item.cost
-        holder.cost.text = when {
-            item.grams != null && cost > 0 -> "%.0f %s · %.2f ₽".format(item.grams, gLabel, cost)
-            item.grams != null -> "%.0f %s".format(item.grams, gLabel)
-            cost > 0 -> "%.2f ₽".format(cost)          // штучные в единицах продукта
-            else -> "—"                                 // штучные с мерой: цена не считается
-        }
+        val ing = items[position]
+        holder.name.text = ing.product?.name ?: "?"
+        holder.details.text = formatAmount(ing.amount) + " " + ing.measure.shortName
+        holder.cost.text = "%.2f ₽".format(ing.cost)
+        holder.itemView.setOnClickListener { onClick(holder.bindingAdapterPosition) }
+        holder.delete.setOnClickListener { onDelete(holder.bindingAdapterPosition) }
     }
 
-    fun update(newItems: List<Ingredient>) {
-        items.clear()
-        items.addAll(newItems)
-        notifyDataSetChanged()
+    private fun formatAmount(amount: Double): String {
+        val df = if (amount % 1.0 == 0.0)
+            DecimalFormat("0", DecimalFormatSymbols(Locale.getDefault()))
+        else
+            DecimalFormat("0.###", DecimalFormatSymbols(Locale.getDefault()))
+        return df.format(amount)
     }
 }

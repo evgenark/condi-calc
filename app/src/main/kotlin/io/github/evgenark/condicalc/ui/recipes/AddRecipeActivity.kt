@@ -1,8 +1,6 @@
 package io.github.evgenark.condicalc.ui.recipes
 
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,19 +9,19 @@ import android.widget.AutoCompleteTextView
 import android.widget.EditText
 import android.widget.Filter
 import android.widget.Filter.FilterResults
-import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.button.MaterialButton
 import io.github.evgenark.condicalc.R
 import io.github.evgenark.condicalc.data.Ingredient
 import io.github.evgenark.condicalc.data.Product
 import io.github.evgenark.condicalc.data.Repo
 import io.github.evgenark.condicalc.data.Unit
-import io.github.evgenark.condicalc.data.db.UnitConversionEntity
 import kotlinx.coroutines.launch
 
 class AddRecipeActivity : AppCompatActivity() {
@@ -32,39 +30,41 @@ class AddRecipeActivity : AppCompatActivity() {
         var productId: Long = -1L
         var amountText: String = ""
         var measure: String = ""   // "" — в единицах продукта
-        var costLabel: String = "" // то, что показываем справа на нижнем этаже
+        var costLabel: String = ""
     }
 
     private data class MeasureOption(val label: String, val value: String, val enabled: Boolean = true)
 
     private val products = mutableListOf<Product>()
-    private val conversions = mutableListOf<UnitConversionEntity>()
+    private val conversions = mutableListOf<io.github.evgenark.condicalc.data.db.UnitConversionEntity>()
     private val rows = mutableListOf<Row>()
-    private var adapter: RowAdapter? = null
-    private var convByName: Map<String, UnitConversionEntity> = emptyMap()
+    private var adapter: IngredientAdapter? = null
+    private var convByName: Map<String, io.github.evgenark.condicalc.data.db.UnitConversionEntity> = emptyMap()
     private var refsByPair: Map<Pair<Long, Long>, Double> = emptyMap()
     private lateinit var totalText: TextView
+    private lateinit var emptyHint: TextView
     private var editRecipeId = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_recipe)
         totalText = findViewById(R.id.totalText)
+        emptyHint = findViewById(R.id.emptyHint)
 
         editRecipeId = intent.getLongExtra("recipe_id", 0L)
         if (editRecipeId > 0) title = "Редактирование рецепта"
 
         val list = findViewById<RecyclerView>(R.id.ingredientEditList)
-        adapter = RowAdapter()
         list.layoutManager = LinearLayoutManager(this)
+        adapter = IngredientAdapter()
         list.adapter = adapter
 
         findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.addIngredientBtn).setOnClickListener {
             rows.add(Row())
             adapter?.notifyItemInserted(rows.size - 1)
-            updateTotal()
+            openEditSheet(rows.size - 1)
         }
-        findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.saveRecipeBtn).setOnClickListener { save() }
+        findViewById<MaterialButton>(R.id.saveRecipeBtn).setOnClickListener { save() }
 
         lifecycleScope.launch { loadDictionaries() }
     }
@@ -93,12 +93,99 @@ class AddRecipeActivity : AppCompatActivity() {
                         "%.1f".format(ing.amount)
                 })
             }
-        } else {
-            rows.add(Row())
         }
 
+        refresh()
+    }
+
+    private fun refresh() {
+        var total = 0.0
+        for (row in rows) {
+            row.costLabel = costLabelFor(row)
+            total += costFor(row) ?: 0.0
+        }
+        totalText.text = "Итого: %.2f ₽".format(total)
+        emptyHint.isVisible = rows.isEmpty()
         adapter?.notifyDataSetChanged()
-        updateTotal()
+    }
+
+    private var View.isVisible: Boolean
+        get() = visibility == View.VISIBLE
+        set(value) { visibility = if (value) View.VISIBLE else View.GONE }
+
+    private fun deleteRow(position: Int) {
+        if (position == RecyclerView.NO_POSITION || position >= rows.size) return
+        rows.removeAt(position)
+        adapter?.notifyItemRemoved(position)
+        refresh()
+    }
+
+    private fun openEditSheet(index: Int) {
+        val row = rows.getOrNull(index) ?: return
+        val sheet = BottomSheetDialog(this)
+        val v = layoutInflater.inflate(R.layout.sheet_ingredient_edit, null)
+        sheet.setContentView(v)
+
+        val productInput = v.findViewById<AutoCompleteTextView>(R.id.sheetProductInput)
+        val amountInput = v.findViewById<EditText>(R.id.sheetAmountInput)
+        val measureInput = v.findViewById<AutoCompleteTextView>(R.id.sheetMeasureInput)
+
+        val productAdapter = ProductAdapter()
+        productInput.setAdapter(productAdapter)
+        productAdapter.setData(products)
+        productInput.threshold = 1
+        productInput.setOnClickListener { productInput.showDropDown() }
+
+        val measureAdapter = MeasureAdapter()
+        measureInput.setAdapter(measureAdapter)
+        measureInput.threshold = 1
+        measureInput.setOnClickListener { measureInput.showDropDown() }
+
+        fun bindMeasure() {
+            measureAdapter.submitOptions(measureOptionsFor(row))
+            measureInput.setText(labelForMeasure(row), false)
+        }
+        bindMeasure()
+        amountInput.setText(row.amountText)
+
+        productInput.setOnItemClickListener { _, _, pos, _ ->
+            val product = productAdapter.shown.getOrNull(pos) ?: return@setOnItemClickListener
+            if (row.productId == product.id) return@setOnItemClickListener
+            row.productId = product.id
+            if (measureOptionsFor(row).none { it.value == row.measure && it.enabled }) {
+                row.measure = ""
+            }
+            bindMeasure()
+            adapter?.notifyItemChanged(index)
+        }
+
+        measureInput.setOnItemClickListener { _, _, pos, _ ->
+            val option = measureAdapter.options.getOrNull(pos) ?: return@setOnItemClickListener
+            if (!option.enabled) {
+                Toast.makeText(this, "Привязки настраиваются в разделе «Настройки»", Toast.LENGTH_SHORT).show()
+                measureInput.setText(labelForMeasure(row), false)
+                return@setOnItemClickListener
+            }
+            row.measure = option.value
+            adapter?.notifyItemChanged(index)
+        }
+
+        v.findViewById<MaterialButton>(R.id.sheetSaveBtn).setOnClickListener {
+            val amount = amountInput.text.toString().replace(',', '.').toDoubleOrNull()
+            when {
+                row.productId <= 0 ->
+                    Toast.makeText(this, "Выберите продукт", Toast.LENGTH_SHORT).show()
+                amount == null || amount <= 0 ->
+                    Toast.makeText(this, "Введите количество", Toast.LENGTH_SHORT).show()
+                else -> {
+                    row.amountText = amountInput.text.toString().trim()
+                    sheet.dismiss()
+                    refresh()
+                }
+            }
+        }
+
+        sheet.show()
     }
 
     private fun save() {
@@ -144,7 +231,6 @@ class AddRecipeActivity : AppCompatActivity() {
 
     private fun productOf(row: Row): Product? = products.firstOrNull { it.id == row.productId }
 
-    // Список мер для строки: своя единица + конверсии (для штучных — только с привязкой)
     private fun measureOptionsFor(row: Row): List<MeasureOption> {
         val product = productOf(row) ?: return listOf(MeasureOption("—", ""))
         val options = mutableListOf(MeasureOption(unitLabel(product), ""))
@@ -160,7 +246,6 @@ class AddRecipeActivity : AppCompatActivity() {
         return options
     }
 
-    // Стоимость позиции: null — если посчитать нельзя
     private fun costFor(row: Row): Double? {
         val product = productOf(row) ?: return null
         val amount = row.amountText.replace(',', '.').toDoubleOrNull() ?: return null
@@ -171,9 +256,9 @@ class AddRecipeActivity : AppCompatActivity() {
             val conv = convByName[row.measure.lowercase()] ?: return null
             val perMeasure = refsByPair[row.productId to conv.id]
             ing.grams = when {
-                perMeasure != null -> amount * perMeasure          // персональная привязка — приоритет
-                !isPiece(product) -> amount * conv.grams          // весовые: общая конвертация
-                else -> null                                      // штучные без привязки — не считаем
+                perMeasure != null -> amount * perMeasure
+                !isPiece(product) -> amount * conv.grams
+                else -> null
             }
         }
         return ing.cost
@@ -186,125 +271,45 @@ class AddRecipeActivity : AppCompatActivity() {
         return if (cost != null) "%.2f ₽".format(cost) else "нужна привязка"
     }
 
-    private fun updateTotal() {
-        var total = 0.0
-        for (row in rows) {
-            row.costLabel = costLabelFor(row)
-            total += costFor(row) ?: 0.0
-        }
-        totalText.text = "Итого: %.2f ₽".format(total)
-        if (rows.isNotEmpty()) adapter?.notifyItemRangeChanged(0, rows.size)
+    private fun labelForMeasure(row: Row): String {
+        val product = productOf(row)
+        return if (row.measure.isEmpty())
+            product?.let { unitLabel(it) } ?: "—"
+        else row.measure
     }
 
-    private inner class RowAdapter : RecyclerView.Adapter<RowAdapter.VH>() {
+    private inner class IngredientAdapter : RecyclerView.Adapter<IngredientAdapter.VH>() {
 
         inner class VH(v: View) : RecyclerView.ViewHolder(v) {
-            val productInput: AutoCompleteTextView = v.findViewById(R.id.productInput)
-            val amountInput: EditText = v.findViewById(R.id.amountInput)
-            val measureInput: AutoCompleteTextView = v.findViewById(R.id.measureInput)
-            val costText: TextView = v.findViewById(R.id.costText)
-            val deleteBtn: ImageView = v.findViewById(R.id.deleteRowBtn)
-
-            val productAdapter = ProductAdapter()
-            val measureAdapter = MeasureAdapter()
-
-            var row: Row? = null
-
-            init {
-                productInput.setAdapter(productAdapter)
-                productInput.threshold = 1
-                // пустое поле не открывает список само — открываем на тапе
-                productInput.setOnClickListener { productInput.showDropDown() }
-
-                productInput.setOnItemClickListener { _, _, pos, _ ->
-                    val product = productAdapter.shown.getOrNull(pos) ?: return@setOnItemClickListener
-                    if (row?.productId == product.id) return@setOnItemClickListener
-                    row?.productId = product.id
-                    // если текущая мера недопустима для нового продукта — сбрасываем на свою единицу
-                    if (measureOptionsFor(row!!).none { it.value == row!!.measure && it.enabled }) {
-                        row?.measure = ""
-                    }
-                    bindMeasure(this, row!!)
-                    updateTotal()
-                }
-
-                measureInput.setAdapter(measureAdapter)
-                measureInput.threshold = 1
-                measureInput.setOnClickListener { measureInput.showDropDown() }
-
-                measureInput.setOnItemClickListener { _, _, pos, _ ->
-                    val option = measureAdapter.options.getOrNull(pos) ?: return@setOnItemClickListener
-                    if (!option.enabled) {
-                        Toast.makeText(this@AddRecipeActivity,
-                            "Привязки настраиваются в разделе «Настройки»",
-                            Toast.LENGTH_SHORT).show()
-                        measureInput.setText(labelForMeasure(row!!), false)
-                        return@setOnItemClickListener
-                    }
-                    row?.measure = option.value
-                    updateTotal()
-                }
-
-                amountInput.addTextChangedListener(object : TextWatcher {
-                    override fun afterTextChanged(s: Editable?) {
-                        val t = s?.toString() ?: ""
-                        if (row?.amountText == t) return  // setText из биндинга — не пересчитываем
-                        row?.amountText = t
-                        updateTotal()
-                    }
-                    override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
-                    override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
-                })
-
-                deleteBtn.setOnClickListener {
-                    val pos = bindingAdapterPosition
-                    if (pos != RecyclerView.NO_POSITION && rows.size > 1) {
-                        rows.removeAt(pos)
-                        notifyItemRemoved(pos)
-                        updateTotal()
-                    } else if (rows.size <= 1) {
-                        Toast.makeText(this@AddRecipeActivity, "Нужен хотя бы один ингредиент", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
-        }
-
-        private fun labelForMeasure(row: Row): String {
-            val product = productOf(row)
-            return if (row.measure.isEmpty())
-                product?.let { unitLabel(it) } ?: "—"
-            else row.measure
-        }
-
-        private fun bindMeasure(holder: VH, row: Row) {
-            holder.measureAdapter.submitOptions(measureOptionsFor(row))
-            holder.measureInput.setText(labelForMeasure(row), false)
+            val name: TextView = v.findViewById(R.id.ingredientName)
+            val details: TextView = v.findViewById(R.id.ingredientDetails)
+            val cost: TextView = v.findViewById(R.id.ingredientCost)
+            val delete: View = v.findViewById(R.id.deleteButton)
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = VH(
             LayoutInflater.from(parent.context)
-                .inflate(R.layout.item_ingredient_edit, parent, false)
+                .inflate(R.layout.item_ingredient, parent, false)
         )
 
         override fun getItemCount() = rows.size
 
         override fun onBindViewHolder(holder: VH, position: Int) {
             val row = rows[position]
-            holder.row = row
+            val product = productOf(row)
 
-            // --- Продукт ---
-            holder.productAdapter.setData(products)
-            holder.productInput.setText(productOf(row)?.name ?: "", false)
-
-            // --- Мера ---
-            bindMeasure(holder, row)
-
-            // --- Количество и стоимость ---
-            if (holder.amountInput.text.toString() != row.amountText) {
-                holder.amountInput.setText(row.amountText)
-                holder.amountInput.setSelection(holder.amountInput.text.length)
+            holder.name.text = product?.name ?: "Выберите продукт"
+            val amount = row.amountText.replace(',', '.').toDoubleOrNull()
+            val amountStr = when {
+                amount == null -> "—"
+                amount % 1.0 == 0.0 -> amount.toLong().toString()
+                else -> amount.toString()
             }
-            holder.costText.text = row.costLabel
+            holder.details.text = "$amountStr ${labelForMeasure(row)}"
+            holder.cost.text = row.costLabel
+
+            holder.itemView.setOnClickListener { openEditSheet(holder.bindingAdapterPosition) }
+            holder.delete.setOnClickListener { deleteRow(holder.bindingAdapterPosition) }
         }
     }
 
@@ -367,8 +372,7 @@ class AddRecipeActivity : AppCompatActivity() {
                 .inflate(android.R.layout.simple_list_item_1, parent, false)
             val tv = v as TextView
             tv.text = options[position].label
-            if (!options[position].enabled) tv.alpha = 0.4f
-            else tv.alpha = 1f
+            tv.alpha = if (options[position].enabled) 1f else 0.4f
             return v
         }
 

@@ -1,4 +1,3 @@
-
 package io.github.evgenark.condicalc.data
 
 enum class Unit(val label: String, val isMass: Boolean) {
