@@ -1,6 +1,10 @@
 package io.github.evgenark.condicalc.ui.recipes
 
 import android.os.Bundle
+import android.content.Context
+import android.view.MotionEvent
+import android.view.inputmethod.InputMethodManager
+import android.graphics.Rect
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,6 +16,8 @@ import android.widget.Filter.FilterResults
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -67,6 +73,49 @@ class AddRecipeActivity : AppCompatActivity() {
         findViewById<MaterialButton>(R.id.saveRecipeBtn).setOnClickListener { save() }
 
         lifecycleScope.launch { loadDictionaries() }
+    }
+
+
+    override fun onCreateOptionsMenu(menu: android.view.Menu): Boolean {
+        if (editRecipeId > 0) menuInflater.inflate(R.menu.menu_recipe_edit, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_delete_recipe -> { confirmDelete(); true }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun confirmDelete() {
+        val name = findViewById<EditText>(R.id.recipeNameInput).text.toString().trim()
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle("Удалить рецепт?")
+            .setMessage("«$name» будет удалён безвозвратно")
+            .setPositiveButton("Удалить") { _, _ ->
+                lifecycleScope.launch {
+                    Repo.deleteRecipe(editRecipeId)
+                    finish()
+                }
+            }
+            .setNegativeButton("Отмена", null)
+            .show()
+    }
+
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        if (ev.action == MotionEvent.ACTION_UP) {
+            val focused = currentFocus
+            if (focused is EditText) {
+                val rect = Rect()
+                focused.getGlobalVisibleRect(rect)
+                if (!rect.contains(ev.rawX.toInt(), ev.rawY.toInt())) {
+                    val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+                    imm.hideSoftInputFromWindow(focused.windowToken, 0)
+                }
+            }
+        }
+        return super.dispatchTouchEvent(ev)
     }
 
     private suspend fun loadDictionaries() {
@@ -125,6 +174,20 @@ class AddRecipeActivity : AppCompatActivity() {
         val sheet = BottomSheetDialog(this)
         val v = layoutInflater.inflate(R.layout.sheet_ingredient_edit, null)
         sheet.setContentView(v)
+        ViewCompat.setOnApplyWindowInsetsListener(v) { _, insets ->
+            val imeVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
+            if (imeVisible) {
+                if (productInput.isPopupShowing) {
+                    productInput.dismissDropDown()
+                    productInput.post { productInput.showDropDown() }
+                }
+                if (measureInput.isPopupShowing) {
+                    measureInput.dismissDropDown()
+                    measureInput.post { measureInput.showDropDown() }
+                }
+            }
+            insets
+        }
 
         val productInput = v.findViewById<AutoCompleteTextView>(R.id.sheetProductInput)
         val amountInput = v.findViewById<EditText>(R.id.sheetAmountInput)

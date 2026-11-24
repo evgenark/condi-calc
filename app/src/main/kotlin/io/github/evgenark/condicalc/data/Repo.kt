@@ -174,6 +174,12 @@ object Repo {
         }
         return id
     }
+
+    suspend fun deleteRecipe(recipeId: Long) {
+        val db = DatabaseProvider.get(ApplicationHolder.context)
+        db.itemDao().deleteByRecipe(recipeId)
+        db.recipeDao().deleteById(recipeId)
+    }
     
     suspend fun getAllRefs(): List<UnitConversionRefEntity> {
         val db = DatabaseProvider.get(ApplicationHolder.context)

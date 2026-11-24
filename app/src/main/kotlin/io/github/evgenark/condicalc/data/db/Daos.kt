@@ -33,6 +33,9 @@ interface RecipeDao {
 
     @Query("SELECT * FROM recipes WHERE id = :id")
     suspend fun getById(id: Long): RecipeEntity?
+
+    @Query("DELETE FROM recipes WHERE id = :id")
+    suspend fun deleteById(id: Long)
 }
 
 @Dao

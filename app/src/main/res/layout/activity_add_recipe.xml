@@ -16,7 +16,7 @@
             android:id="@+id/recipeNameInput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Название рецепта"
+            android:hint="Введите название"
             android:inputType="textCapSentences" />
 
         <LinearLayout
