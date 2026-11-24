@@ -71,22 +71,25 @@ class AddRecipeActivity : AppCompatActivity() {
             openEditSheet(rows.size - 1)
         }
         findViewById<MaterialButton>(R.id.saveRecipeBtn).setOnClickListener { save() }
+        val deleteBtn = findViewById<android.widget.ImageButton>(R.id.deleteRecipeBtn)
+        if (editRecipeId > 0) deleteBtn.visibility = View.VISIBLE
+        deleteBtn.setOnClickListener { confirmDelete() }
 
         lifecycleScope.launch { loadDictionaries() }
     }
 
 
-    override fun onCreateOptionsMenu(menu: android.view.Menu): Boolean {
-        if (editRecipeId > 0) menuInflater.inflate(R.menu.menu_recipe_edit, menu)
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.action_delete_recipe -> { confirmDelete(); true }
-            else -> super.onOptionsItemSelected(item)
-        }
-    }
+//    override fun onCreateOptionsMenu(menu: android.view.Menu): Boolean {
+//        if (editRecipeId > 0) menuInflater.inflate(R.menu.menu_recipe_edit, menu)
+//        return true
+//    }
+//
+//    override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean {
+//        return when (item.itemId) {
+//            R.id.action_delete_recipe -> { confirmDelete(); true }
+//            else -> super.onOptionsItemSelected(item)
+//        }
+//    }
 
     private fun confirmDelete() {
         val name = findViewById<EditText>(R.id.recipeNameInput).text.toString().trim()
