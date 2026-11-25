@@ -278,6 +278,37 @@ class AddRecipeActivity : AppCompatActivity() {
             adapter?.notifyItemChanged(index)
         }
 
+        // Выпадающий список не должен залезать под клавиатуру:
+        // ограничиваем его высоту видимой зоной
+        val root = window.decorView
+        ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
+            if (dialog.isShowing && insets.isVisible(WindowInsetsCompat.Type.ime())) {
+                val rootLoc = IntArray(2)
+                root.getLocationOnScreen(rootLoc)
+                val visibleBottom = rootLoc[1] + root.height  // нижняя граница видимой зоны
+
+                for (field in listOf(productInput, measureInput)) {
+                    val loc = IntArray(2)
+                    field.getLocationOnScreen(loc)
+                    field.dropDownHeight = (visibleBottom - (loc[1] + field.height) - 48)
+                        .coerceAtLeast(120)
+                }
+                // если список уже открыт — перезапускаем его с новой высотой
+                if (productInput.isPopupShowing) {
+                    productInput.dismissDropDown()
+                    productInput.post { productInput.showDropDown() }
+                }
+                if (measureInput.isPopupShowing) {
+                    measureInput.dismissDropDown()
+                    measureInput.post { measureInput.showDropDown() }
+                }
+            } else {
+                productInput.dropDownHeight = ViewGroup.LayoutParams.WRAP_CONTENT
+                measureInput.dropDownHeight = ViewGroup.LayoutParams.WRAP_CONTENT
+            }
+            insets
+        }
+
         v.findViewById<MaterialButton>(R.id.sheetSaveBtn).setOnClickListener {
             val amount = amountInput.text.toString().replace(',', '.').toDoubleOrNull()
             when {
