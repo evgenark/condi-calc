@@ -70,26 +70,53 @@ class AddRecipeActivity : AppCompatActivity() {
             adapter?.notifyItemInserted(rows.size - 1)
             openEditSheet(rows.size - 1)
         }
-        findViewById<MaterialButton>(R.id.saveRecipeBtn).setOnClickListener { save() }
-        val deleteBtn = findViewById<android.widget.ImageButton>(R.id.deleteRecipeBtn)
-        if (editRecipeId > 0) deleteBtn.visibility = View.VISIBLE
-        deleteBtn.setOnClickListener { confirmDelete() }
+        findViewById<android.widget.ImageButton>(R.id.menuBtn).setOnClickListener { anchor ->
+            showEditMenu(anchor)
+        }
+
+    private fun showEditMenu(anchor: View) {
+        val popup = androidx.appcompat.widget.PopupMenu(this, anchor)
+        popup.menuInflater.inflate(R.menu.menu_recipe_edit, popup.menu)
+        // У нового рецепта удалять нечего
+        if (editRecipeId == 0L) popup.menu.removeItem(R.id.action_delete_recipe)
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                R.id.action_save -> { save(); true }
+                R.id.action_save_as -> { saveAsCopy(); true }
+                R.id.action_delete_recipe -> { confirmDelete(); true }
+                else -> false
+            }
+        }
+        popup.show()
+    }
+
+    private fun collectItems(): List<Triple<Long, Double, String>> = rows.mapNotNull { row ->
+        val amount = row.amountText.replace(',', '.').toDoubleOrNull()
+        if (row.productId > 0 && amount != null && amount > 0)
+            Triple(row.productId, amount, row.measure)
+        else null
+    }
+
+    private fun saveAsCopy() {
+        val name = findViewById<EditText>(R.id.recipeNameInput).text.toString().trim()
+        if (name.isEmpty()) {
+            Toast.makeText(this, "Введите название рецепта", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val items = collectItems()
+        if (items.isEmpty()) {
+            Toast.makeText(this, "Заполните хотя бы одну строку: продукт и количество", Toast.LENGTH_SHORT).show()
+            return
+        }
+        lifecycleScope.launch {
+            Repo.saveRecipe("$name (копия)", items, 0)
+            Toast.makeText(this@AddRecipeActivity, "Копия создана", Toast.LENGTH_SHORT).show()
+            finish()
+        }
+    }
 
         lifecycleScope.launch { loadDictionaries() }
     }
-
-
-//    override fun onCreateOptionsMenu(menu: android.view.Menu): Boolean {
-//        if (editRecipeId > 0) menuInflater.inflate(R.menu.menu_recipe_edit, menu)
-//        return true
-//    }
-//
-//    override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean {
-//        return when (item.itemId) {
-//            R.id.action_delete_recipe -> { confirmDelete(); true }
-//            else -> super.onOptionsItemSelected(item)
-//        }
-//    }
 
     private fun confirmDelete() {
         val name = findViewById<EditText>(R.id.recipeNameInput).text.toString().trim()
@@ -113,6 +140,7 @@ class AddRecipeActivity : AppCompatActivity() {
                 val rect = Rect()
                 focused.getGlobalVisibleRect(rect)
                 if (!rect.contains(ev.rawX.toInt(), ev.rawY.toInt())) {
+                    focused.clearFocus()
                     val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
                     imm.hideSoftInputFromWindow(focused.windowToken, 0)
                 }
@@ -267,13 +295,9 @@ class AddRecipeActivity : AppCompatActivity() {
             Toast.makeText(this, "Сначала добавьте продукты", Toast.LENGTH_SHORT).show()
             return
         }
-
-        val items = rows.mapNotNull { row ->
-            val amount = row.amountText.replace(',', '.').toDoubleOrNull()
-            if (row.productId > 0 && amount != null && amount > 0)
-                Triple(row.productId, amount, row.measure)
-            else null
-        }
+        
+        val items = collectItems()
+        
         if (items.isEmpty()) {
             Toast.makeText(this, "Заполните хотя бы одну строку: продукт и количество", Toast.LENGTH_SHORT).show()
             return
