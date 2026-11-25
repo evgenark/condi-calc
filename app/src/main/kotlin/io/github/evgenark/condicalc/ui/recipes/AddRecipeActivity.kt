@@ -11,6 +11,7 @@ import android.graphics.Rect
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.EditText
@@ -255,6 +256,30 @@ class AddRecipeActivity : AppCompatActivity() {
         }
         bindMeasure()
         amountInput.setText(row.amountText)
+
+        // Выпадающие списки не должны заходить под клавиатуру:
+        // видимая рамка окна всегда заканчивается на границе клавиатуры
+        val decor = dialog.window!!.decorView
+        val frame = Rect()
+        val density = resources.displayMetrics.density
+        val layoutListener = ViewTreeObserver.OnGlobalLayoutListener {
+            decor.getWindowVisibleDisplayFrame(frame)
+            productInput.post {
+                val p = IntArray(2)
+                productInput.getLocationOnScreen(p)
+                (frame.bottom - p[1] - productInput.height - (12 * density).toInt())
+                    .takeIf { it > 0 }?.let { productInput.dropDownHeight = it }
+
+                val m = IntArray(2)
+                measureInput.getLocationOnScreen(m)
+                (frame.bottom - m[1] - measureInput.height - (12 * density).toInt())
+                    .takeIf { it > 0 }?.let { measureInput.dropDownHeight = it }
+            }
+        }
+        decor.viewTreeObserver.addOnGlobalLayoutListener(layoutListener)
+        dialog.setOnDismissListener {
+            decor.viewTreeObserver.removeOnGlobalLayoutListener(layoutListener)
+        }
 
         productInput.setOnItemClickListener { _, _, pos, _ ->
             val product = productAdapter.shown.getOrNull(pos) ?: return@setOnItemClickListener
