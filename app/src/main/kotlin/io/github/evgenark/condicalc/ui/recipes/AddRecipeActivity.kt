@@ -1,8 +1,5 @@
 package io.github.evgenark.condicalc.ui.recipes
 
-import android.app.Dialog
-import android.view.Gravity
-import android.view.WindowManager
 import android.os.Bundle
 import android.content.Context
 import android.view.MotionEvent
@@ -11,7 +8,6 @@ import android.graphics.Rect
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.ViewTreeObserver
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.EditText
@@ -206,17 +202,9 @@ class AddRecipeActivity : AppCompatActivity() {
 
     private fun openEditSheet(index: Int) {
         val row = rows.getOrNull(index) ?: return
-        val dialog = Dialog(this)
+        val sheet = BottomSheetDialog(this)
         val v = layoutInflater.inflate(R.layout.sheet_ingredient_edit, null)
-        dialog.setContentView(v)
-        dialog.window?.apply {
-            setGravity(Gravity.TOP)
-            setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-            // Окно не реагирует на клавиатуру: поля не двигаются —
-            // выпадающему списку не за чем «догонять»
-            setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
-            setBackgroundDrawableResource(android.R.color.transparent)
-        }
+        sheet.setContentView(v)
 
         val productInput = v.findViewById<AutoCompleteTextView>(R.id.sheetProductInput)
         val amountInput = v.findViewById<EditText>(R.id.sheetAmountInput)
@@ -257,30 +245,6 @@ class AddRecipeActivity : AppCompatActivity() {
         bindMeasure()
         amountInput.setText(row.amountText)
 
-        // Выпадающие списки не должны заходить под клавиатуру:
-        // видимая рамка окна всегда заканчивается на границе клавиатуры
-        val decor = dialog.window!!.decorView
-        val frame = Rect()
-        val density = resources.displayMetrics.density
-        val layoutListener = ViewTreeObserver.OnGlobalLayoutListener {
-            decor.getWindowVisibleDisplayFrame(frame)
-            productInput.post {
-                val p = IntArray(2)
-                productInput.getLocationOnScreen(p)
-                (frame.bottom - p[1] - productInput.height - (12 * density).toInt())
-                    .takeIf { it > 0 }?.let { productInput.dropDownHeight = it }
-
-                val m = IntArray(2)
-                measureInput.getLocationOnScreen(m)
-                (frame.bottom - m[1] - measureInput.height - (12 * density).toInt())
-                    .takeIf { it > 0 }?.let { measureInput.dropDownHeight = it }
-            }
-        }
-        decor.viewTreeObserver.addOnGlobalLayoutListener(layoutListener)
-        dialog.setOnDismissListener {
-            decor.viewTreeObserver.removeOnGlobalLayoutListener(layoutListener)
-        }
-
         productInput.setOnItemClickListener { _, _, pos, _ ->
             val product = productAdapter.shown.getOrNull(pos) ?: return@setOnItemClickListener
             if (row.productId == product.id) return@setOnItemClickListener
@@ -303,37 +267,6 @@ class AddRecipeActivity : AppCompatActivity() {
             adapter?.notifyItemChanged(index)
         }
 
-        // Выпадающий список не должен залезать под клавиатуру:
-        // ограничиваем его высоту видимой зоной
-        val root = window.decorView
-        ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
-            if (dialog.isShowing && insets.isVisible(WindowInsetsCompat.Type.ime())) {
-                val rootLoc = IntArray(2)
-                root.getLocationOnScreen(rootLoc)
-                val visibleBottom = rootLoc[1] + root.height  // нижняя граница видимой зоны
-
-                for (field in listOf(productInput, measureInput)) {
-                    val loc = IntArray(2)
-                    field.getLocationOnScreen(loc)
-                    field.dropDownHeight = (visibleBottom - (loc[1] + field.height) - 48)
-                        .coerceAtLeast(120)
-                }
-                // если список уже открыт — перезапускаем его с новой высотой
-                if (productInput.isPopupShowing) {
-                    productInput.dismissDropDown()
-                    productInput.post { productInput.showDropDown() }
-                }
-                if (measureInput.isPopupShowing) {
-                    measureInput.dismissDropDown()
-                    measureInput.post { measureInput.showDropDown() }
-                }
-            } else {
-                productInput.dropDownHeight = ViewGroup.LayoutParams.WRAP_CONTENT
-                measureInput.dropDownHeight = ViewGroup.LayoutParams.WRAP_CONTENT
-            }
-            insets
-        }
-
         v.findViewById<MaterialButton>(R.id.sheetSaveBtn).setOnClickListener {
             val amount = amountInput.text.toString().replace(',', '.').toDoubleOrNull()
             when {
@@ -343,13 +276,13 @@ class AddRecipeActivity : AppCompatActivity() {
                     Toast.makeText(this, "Введите количество", Toast.LENGTH_SHORT).show()
                 else -> {
                     row.amountText = amountInput.text.toString().trim()
-                    dialog.dismiss()
+                    sheet.dismiss()
                     refresh()
                 }
             }
         }
 
-        dialog.show()
+        sheet.show()
     }
 
     private fun save() {
