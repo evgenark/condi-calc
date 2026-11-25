@@ -1,5 +1,8 @@
 package io.github.evgenark.condicalc.ui.recipes
 
+import android.app.Dialog
+import android.view.Gravity
+import android.view.WindowManager
 import android.os.Bundle
 import android.content.Context
 import android.view.MotionEvent
@@ -202,9 +205,17 @@ class AddRecipeActivity : AppCompatActivity() {
 
     private fun openEditSheet(index: Int) {
         val row = rows.getOrNull(index) ?: return
-        val sheet = BottomSheetDialog(this)
+        val dialog = Dialog(this)
         val v = layoutInflater.inflate(R.layout.sheet_ingredient_edit, null)
-        sheet.setContentView(v)
+        dialog.setContentView(v)
+        dialog.window?.apply {
+            setGravity(Gravity.TOP)
+            setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            // Окно не реагирует на клавиатуру: поля не двигаются —
+            // выпадающему списку не за чем «догонять»
+            setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
+            setBackgroundDrawableResource(android.R.color.transparent)
+        }
 
         val productInput = v.findViewById<AutoCompleteTextView>(R.id.sheetProductInput)
         val amountInput = v.findViewById<EditText>(R.id.sheetAmountInput)
@@ -276,13 +287,13 @@ class AddRecipeActivity : AppCompatActivity() {
                     Toast.makeText(this, "Введите количество", Toast.LENGTH_SHORT).show()
                 else -> {
                     row.amountText = amountInput.text.toString().trim()
-                    sheet.dismiss()
+                    dialog.dismiss()
                     refresh()
                 }
             }
         }
 
-        sheet.show()
+        dialog.show()
     }
 
     private fun save() {
