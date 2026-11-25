@@ -74,6 +74,9 @@ class AddRecipeActivity : AppCompatActivity() {
             showEditMenu(anchor)
         }
 
+        lifecycleScope.launch { loadDictionaries() }
+    }
+
     private fun showEditMenu(anchor: View) {
         val popup = androidx.appcompat.widget.PopupMenu(this, anchor)
         popup.menuInflater.inflate(R.menu.menu_recipe_edit, popup.menu)
@@ -113,9 +116,6 @@ class AddRecipeActivity : AppCompatActivity() {
             Toast.makeText(this@AddRecipeActivity, "Копия создана", Toast.LENGTH_SHORT).show()
             finish()
         }
-    }
-
-        lifecycleScope.launch { loadDictionaries() }
     }
 
     private fun confirmDelete() {
