@@ -19,8 +19,6 @@ import android.widget.Filter.FilterResults
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-//import androidx.core.view.ViewCompat
-//import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -214,22 +212,65 @@ class AddRecipeActivity : AppCompatActivity() {
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         val v = layoutInflater.inflate(R.layout.dialog_ingredient_edit, null)
         dialog.setContentView(v)
+        v.setOnClickListener {
+            val focused = dialog.currentFocus
+            if (focused is EditText) {
+                focused.clearFocus()
+                val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+                imm.hideSoftInputFromWindow(focused.windowToken, 0)
+            }
+        }
         dialog.window?.apply {
             setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
             setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         }
 
-//        measureInput.setOnItemClickListener { _, _, pos, _ ->
-//            val option = measureAdapter.options.getOrNull(pos) ?: return@setOnItemClickListener
-//            if (!option.enabled) {
-//                Toast.makeText(this, "Привязки настраиваются в разделе «Настройки»", Toast.LENGTH_SHORT).show()
-//                measureInput.setText(labelForMeasure(row), false)
-//                return@setOnItemClickListener
-//            }
-//            row.measure = option.value
-//            measureInput.setText(labelForMeasure(row), false)
-//            adapter?.notifyItemChanged(index)
-//        }
+        val productInput = v.findViewById<AutoCompleteTextView>(R.id.sheetProductInput)
+        val amountInput = v.findViewById<EditText>(R.id.sheetAmountInput)
+        val measureInput = v.findViewById<AutoCompleteTextView>(R.id.sheetMeasureInput)
+
+        val productAdapter = ProductAdapter()
+        productInput.setAdapter(productAdapter)
+        productAdapter.setData(products)
+        productInput.threshold = 1
+        productInput.setOnClickListener { productInput.showDropDown() }
+
+        val measureAdapter = MeasureAdapter()
+        measureInput.setAdapter(measureAdapter)
+        measureInput.threshold = 1
+        measureInput.setOnClickListener { measureInput.showDropDown() }
+
+        productInput.setText(productOf(row)?.name ?: "", false)
+
+        fun bindMeasure() {
+            measureAdapter.submitOptions(measureOptionsFor(row))
+            measureInput.setText(labelForMeasure(row), false)
+        }
+        bindMeasure()
+        amountInput.setText(row.amountText)
+
+        productInput.setOnItemClickListener { _, _, pos, _ ->
+            val product = productAdapter.shown.getOrNull(pos) ?: return@setOnItemClickListener
+            if (row.productId == product.id) return@setOnItemClickListener
+            row.productId = product.id
+            if (measureOptionsFor(row).none { it.value == row.measure && it.enabled }) {
+                row.measure = ""
+            }
+            bindMeasure()
+            adapter?.notifyItemChanged(index)
+        }
+
+        measureInput.setOnItemClickListener { _, _, pos, _ ->
+            val option = measureAdapter.options.getOrNull(pos) ?: return@setOnItemClickListener
+            if (!option.enabled) {
+                Toast.makeText(this, "Привязки настраиваются в разделе «Настройки»", Toast.LENGTH_SHORT).show()
+                measureInput.setText(labelForMeasure(row), false)
+                return@setOnItemClickListener
+            }
+            row.measure = option.value
+            measureInput.setText(labelForMeasure(row), false)
+            adapter?.notifyItemChanged(index)
+        }
 
         v.findViewById<MaterialButton>(R.id.sheetSaveBtn).setOnClickListener {
             val amount = amountInput.text.toString().replace(',', '.').toDoubleOrNull()
@@ -248,7 +289,6 @@ class AddRecipeActivity : AppCompatActivity() {
 
         dialog.show()
     }
-
     private fun save() {
         val name = findViewById<EditText>(R.id.recipeNameInput).text.toString().trim()
         if (name.isEmpty()) {
