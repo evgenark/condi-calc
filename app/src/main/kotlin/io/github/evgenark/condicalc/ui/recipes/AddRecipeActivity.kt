@@ -1,6 +1,7 @@
 package io.github.evgenark.condicalc.ui.recipes
 
 import android.os.Bundle
+import android.app.Dialog
 import android.content.Context
 import android.view.MotionEvent
 import android.view.inputmethod.InputMethodManager
@@ -8,6 +9,8 @@ import android.graphics.Rect
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.Window
+import android.view.WindowManager
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.EditText
@@ -16,12 +19,11 @@ import android.widget.Filter.FilterResults
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+//import androidx.core.view.ViewCompat
+//import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import io.github.evgenark.condicalc.R
 import io.github.evgenark.condicalc.data.Ingredient
@@ -208,71 +210,26 @@ class AddRecipeActivity : AppCompatActivity() {
 
     private fun openEditSheet(index: Int) {
         val row = rows.getOrNull(index) ?: return
-        val sheet = BottomSheetDialog(this)
-        val v = layoutInflater.inflate(R.layout.sheet_ingredient_edit, null)
-        sheet.setContentView(v)
-
-        val productInput = v.findViewById<AutoCompleteTextView>(R.id.sheetProductInput)
-        val amountInput = v.findViewById<EditText>(R.id.sheetAmountInput)
-        val measureInput = v.findViewById<AutoCompleteTextView>(R.id.sheetMeasureInput)
-
-        val productAdapter = ProductAdapter()
-        productInput.setAdapter(productAdapter)
-        productAdapter.setData(products)
-        productInput.threshold = 1
-        productInput.setOnClickListener { productInput.showDropDown() }
-
-        val measureAdapter = MeasureAdapter()
-        measureInput.setAdapter(measureAdapter)
-        measureInput.threshold = 1
-        measureInput.setOnClickListener { measureInput.showDropDown() }
-
-        ViewCompat.setOnApplyWindowInsetsListener(v) { _, insets ->
-            val imeVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
-            if (imeVisible) {
-                if (productInput.isPopupShowing) {
-                    productInput.dismissDropDown()
-                    productInput.post { productInput.showDropDown() }
-                }
-                if (measureInput.isPopupShowing) {
-                    measureInput.dismissDropDown()
-                    measureInput.post { measureInput.showDropDown() }
-                }
-            }
-            insets
+        val dialog = Dialog(this)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        val v = layoutInflater.inflate(R.layout.dialog_ingredient_edit, null)
+        dialog.setContentView(v)
+        dialog.window?.apply {
+            setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         }
 
-        productInput.setText(productOf(row)?.name ?: "", false)
-
-        fun bindMeasure() {
-            measureAdapter.submitOptions(measureOptionsFor(row))
-            measureInput.setText(labelForMeasure(row), false)
-        }
-        bindMeasure()
-        amountInput.setText(row.amountText)
-
-        productInput.setOnItemClickListener { _, _, pos, _ ->
-            val product = productAdapter.shown.getOrNull(pos) ?: return@setOnItemClickListener
-            if (row.productId == product.id) return@setOnItemClickListener
-            row.productId = product.id
-            if (measureOptionsFor(row).none { it.value == row.measure && it.enabled }) {
-                row.measure = ""
-            }
-            bindMeasure()
-            adapter?.notifyItemChanged(index)
-        }
-
-        measureInput.setOnItemClickListener { _, _, pos, _ ->
-            val option = measureAdapter.options.getOrNull(pos) ?: return@setOnItemClickListener
-            if (!option.enabled) {
-                Toast.makeText(this, "Привязки настраиваются в разделе «Настройки»", Toast.LENGTH_SHORT).show()
-                measureInput.setText(labelForMeasure(row), false)
-                return@setOnItemClickListener
-            }
-            row.measure = option.value
-            measureInput.setText(labelForMeasure(row), false)
-            adapter?.notifyItemChanged(index)
-        }
+//        measureInput.setOnItemClickListener { _, _, pos, _ ->
+//            val option = measureAdapter.options.getOrNull(pos) ?: return@setOnItemClickListener
+//            if (!option.enabled) {
+//                Toast.makeText(this, "Привязки настраиваются в разделе «Настройки»", Toast.LENGTH_SHORT).show()
+//                measureInput.setText(labelForMeasure(row), false)
+//                return@setOnItemClickListener
+//            }
+//            row.measure = option.value
+//            measureInput.setText(labelForMeasure(row), false)
+//            adapter?.notifyItemChanged(index)
+//        }
 
         v.findViewById<MaterialButton>(R.id.sheetSaveBtn).setOnClickListener {
             val amount = amountInput.text.toString().replace(',', '.').toDoubleOrNull()
@@ -283,13 +240,13 @@ class AddRecipeActivity : AppCompatActivity() {
                     Toast.makeText(this, "Введите количество", Toast.LENGTH_SHORT).show()
                 else -> {
                     row.amountText = amountInput.text.toString().trim()
-                    sheet.dismiss()
+                    dialog.dismiss()
                     refresh()
                 }
             }
         }
 
-        sheet.show()
+        dialog.show()
     }
 
     private fun save() {
