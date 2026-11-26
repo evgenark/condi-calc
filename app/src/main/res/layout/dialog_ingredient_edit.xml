@@ -22,7 +22,10 @@
         android:layout_weight="1">
 
         <LinearLayout
+            android:id="@+id/sheetContent"
             android:orientation="vertical"
+            android:klickable="true"
+            android:focusable="true"
             android:paddingStart="20dp"
             android:paddingEnd="20dp"
             android:paddingBottom="16dp"
@@ -38,7 +41,7 @@
 
                 <com.google.android.material.textfield.MaterialAutoCompleteTextView
                     android:id="@+id/sheetProductInput"
-                    android:inputType="none"
+                    android:inputType="text"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content" />
             </com.google.android.material.textfield.TextInputLayout>

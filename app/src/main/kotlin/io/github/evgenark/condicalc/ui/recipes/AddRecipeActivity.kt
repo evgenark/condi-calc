@@ -214,7 +214,7 @@ class AddRecipeActivity : AppCompatActivity() {
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         val v = layoutInflater.inflate(R.layout.dialog_ingredient_edit, null)
         dialog.setContentView(v)
-        v.setOnClickListener {
+        val hideKeyboard: () -> Unit = {
             val focused = dialog.currentFocus
             if (focused is EditText) {
                 focused.clearFocus()
@@ -222,6 +222,8 @@ class AddRecipeActivity : AppCompatActivity() {
                 imm.hideSoftInputFromWindow(focused.windowToken, 0)
             }
         }
+        v.setOnClickListener { hideKeyboard() }
+        v.findViewById<View>(R.id.sheetContent).setOnClickListener { hideKeyboard() }
         dialog.window?.apply {
             setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
             setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
