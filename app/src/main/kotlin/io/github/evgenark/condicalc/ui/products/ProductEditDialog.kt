@@ -65,7 +65,7 @@ class ProductEditDialog(private val activity: FragmentActivity) {
         unit.adapter = ArrayAdapter(
             activity,
             android.R.layout.simple_spinner_dropdown_item,
-            Unit.entries.map { it.label }
+            DataUnit.entries.map { it.label }
         )
 
         // Тап мимо полей сворачивает клавиатуру
