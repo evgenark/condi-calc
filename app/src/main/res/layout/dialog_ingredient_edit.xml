@@ -24,7 +24,7 @@
         <LinearLayout
             android:id="@+id/sheetContent"
             android:orientation="vertical"
-            android:klickable="true"
+            android:clickable="true"
             android:focusable="true"
             android:paddingStart="20dp"
             android:paddingEnd="20dp"
