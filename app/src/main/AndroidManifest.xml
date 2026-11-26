@@ -2,7 +2,10 @@
     <application
         android:name="io.github.evgenark.condicalc.data.CondiCalcApp"
         android:label="@string/app_name" 
-        android:theme="@style/Theme.CondiCalc">
+        android:theme="@style/Theme.CondiCalc"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round">
+
         <activity
             android:name=".MainActivity"
             android:exported="true">
