@@ -1,5 +1,6 @@
 package io.github.evgenark.condicalc.ui.recipes
 
+import android.os.Build
 import android.os.Bundle
 import android.app.Dialog
 import android.content.Context
@@ -10,6 +11,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.Window
+import android.view.WindowInsets
 import android.view.WindowManager
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
@@ -223,6 +225,17 @@ class AddRecipeActivity : AppCompatActivity() {
         dialog.window?.apply {
             setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
             setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+            setBackgroundDrawableResource(android.R.color.transparent)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                setDecorFitsSystemWindows(false)
+                decorView.setOnApplyWindowInsetsListener { view, insets ->
+                    val bars = insets.getInsets(
+                        WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout()
+                    )
+                    view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+                    insets
+                }
+            }
         }
 
         val productInput = v.findViewById<AutoCompleteTextView>(R.id.sheetProductInput)
