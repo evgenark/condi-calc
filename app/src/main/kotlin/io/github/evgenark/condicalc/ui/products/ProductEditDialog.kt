@@ -1,11 +1,13 @@
 package io.github.evgenark.condicalc.ui.products
 
+import android.os.Build
 import android.app.Dialog
 import android.content.Context
 import android.text.InputType
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
+import android.view.WindowInsets
 import android.view.Window
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
@@ -46,11 +48,19 @@ class ProductEditDialog(private val activity: FragmentActivity) {
         val v = LayoutInflater.from(activity).inflate(R.layout.dialog_product_edit, null)
         dialog.setContentView(v)
         dialog.window?.apply {
-            setLayout(
-                WindowManager.LayoutParams.MATCH_PARENT,
-                WindowManager.LayoutParams.MATCH_PARENT
-            )
+            setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
             setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+            setBackgroundDrawableResource(android.R.color.transparent)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                setDecorFitsSystemWindows(false)
+                decorView.setOnApplyWindowInsetsListener { view, insets ->
+                    val bars = insets.getInsets(
+                        WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout()
+                    )
+                    view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+                    insets
+                }
+            }
         }
         // Список продуктов обновится при любом закрытии диалога
         dialog.setOnDismissListener { onSaved?.invoke() }
