@@ -167,6 +167,12 @@ class AddRecipeActivity : AppCompatActivity() {
                 rows.add(Row().apply {
                     productId = ing.product.id
                     measure = ing.measure
+                    val own = when (ing.product.unit) {
+                        Unit.G -> "грамм"; Unit.KG -> "килограмм"
+                        Unit.L -> "литр"; Unit.ML -> "миллилитр"
+                        else -> "штук."
+                    }
+                    if (measure.equals(own, ignoreCase = true)) measure = ""
                     amountText = if (ing.amount % 1.0 == 0.0)
                         ing.amount.toInt().toString()
                     else
@@ -328,7 +334,17 @@ class AddRecipeActivity : AppCompatActivity() {
         val product = productOf(row) ?: return listOf(MeasureOption("—", ""))
         val options = mutableListOf(MeasureOption(unitLabel(product), ""))
         val piece = isPiece(product)
+        // Собственная единица уже стоит первой в списке — конвертацию с тем же
+        // смыслом (грамм для «г», килограмм для «кг» и т.д.) дублировать не нужно
+        val ownName = when (product.unit) {
+            Unit.G -> "грамм"
+            Unit.KG -> "килограмм"
+            Unit.L -> "литр"
+            Unit.ML -> "миллилитр"
+            else -> "штук."
+        }
         conversions.forEach { conv ->
+            if (conv.name.equals(ownName, ignoreCase = true)) return@forEach
             if (!piece || refsByPair.containsKey(product.id to conv.id)) {
                 options.add(MeasureOption(conv.name, conv.name))
             }
