@@ -126,7 +126,7 @@ class ProductEditDialog(private val activity: FragmentActivity) {
                 text = conv.name
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             }
-            val input = EditText(activity).apply {
+            val input = com.google.android.material.textfield.TextInputEditText(activity).apply {
                 inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
                 gravity = Gravity.END
                 hint = "по умолчанию ${formatNum(conv.grams)} г"
