@@ -387,6 +387,26 @@ class AddRecipeActivity : AppCompatActivity() {
         else row.measure
     }
 
+
+    private fun shortMeasureLabel(name: String): String = when (name.lowercase()) {
+        "грамм" -> "г"
+        "килограмм" -> "кг"
+        "литр" -> "л"
+        "миллилитр" -> "мл"
+        "стакан" -> "ст."
+        "столовая ложка" -> "ст.л."
+        "чайная ложка" -> "ч.л."
+        "штук." -> "шт"
+        else -> name
+    }
+
+    private fun shortLabelForMeasure(row: Row): String {
+        val product = productOf(row)
+        return if (row.measure.isEmpty())
+            product?.let { unitLabel(it) } ?: "—"
+        else shortMeasureLabel(row.measure)
+    }
+
     private inner class IngredientAdapter : RecyclerView.Adapter<IngredientAdapter.VH>() {
 
         inner class VH(v: View) : RecyclerView.ViewHolder(v) {
@@ -414,7 +434,7 @@ class AddRecipeActivity : AppCompatActivity() {
                 amount % 1.0 == 0.0 -> amount.toLong().toString()
                 else -> amount.toString()
             }
-            holder.details.text = "$amountStr ${labelForMeasure(row)}"
+            holder.details.text = "$amountStr ${shortLabelForMeasure(row)}"
             holder.cost.text = row.costLabel
 
             holder.itemView.setOnClickListener { openEditSheet(holder.bindingAdapterPosition) }
