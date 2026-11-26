@@ -133,15 +133,15 @@ object Repo {
 
             if (item.measure.isEmpty()) {
                 ing.grams = when (product.unit) {
-                    Unit.G  -> item.amount
-                    Unit.KG -> item.amount * 1000
+                    MeasureUnit.G  -> item.amount
+                    MeasureUnit.KG -> item.amount * 1000
                     else -> null
                 }
             } else {
                 convByName[item.measure.lowercase()]?.let { conv ->
                     val perMeasure = refsByPair[item.productId to conv.id] ?: conv.grams
                     ing.grams = when (product.unit) {
-                        Unit.G, Unit.KG, Unit.L, Unit.ML -> item.amount * perMeasure
+                        MeasureUnit.G, MeasureUnit.KG, MeasureUnit.L, MeasureUnit.ML -> item.amount * perMeasure
                         else -> null   // штучные и прочие — цена только в единицах продукта
                     }
                 }
@@ -233,7 +233,7 @@ object Repo {
         return Product(
             id = e.id,
             name = e.name,
-            unit = Unit.valueOf(e.unit),
+            unit = MeasureUnit.valueOf(e.unit),
             packAmount = e.packAmount,
             packPrice = e.packPrice
         )

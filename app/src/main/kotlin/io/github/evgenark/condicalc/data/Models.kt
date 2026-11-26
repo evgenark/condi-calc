@@ -1,6 +1,6 @@
 package io.github.evgenark.condicalc.data
 
-enum class Unit(val label: String, val isMass: Boolean) {
+enum class MeasureUnit(val label: String, val isMass: Boolean) {
     KG("кг", true),
     G("г", true),
     L("л", false),
@@ -15,7 +15,7 @@ enum class Unit(val label: String, val isMass: Boolean) {
 
 data class Product(
     var name: String,
-    var unit: Unit = Unit.G,
+    var unit: MeasureUnit = MeasureUnit.G,
     var packAmount: Double = 1.0,   // сколько в упаковке (в единицах unit)
     var packPrice: Double = 0.0,    // цена упаковки, ₽
     val id: Long = 0L
@@ -26,14 +26,14 @@ data class Product(
     // Цена в «человеческой» единице: г → за кг, мл → за литр, остальное — как есть
     val pricePerStd: Double
         get() = when (unit) {
-            Unit.G, Unit.ML -> pricePerUnit * 1000
+            MeasureUnit.G, MeasureUnit.ML -> pricePerUnit * 1000
             else -> pricePerUnit
         }
 
     val stdUnitLabel: String
         get() = when (unit) {
-            Unit.G, Unit.KG -> "кг"
-            Unit.ML, Unit.L -> "л"
+            MeasureUnit.G, MeasureUnit.KG -> "кг"
+            MeasureUnit.ML, MeasureUnit.L -> "л"
             else -> unit.label   // шт, ч. л., ст. л., стакан
         }
 }
@@ -51,10 +51,10 @@ data class Ingredient(
             if (measure.isEmpty()) return amount * product.pricePerUnit
             val g = grams ?: return 0.0
             return when (product.unit) {
-                Unit.G  -> g * product.pricePerUnit
-                Unit.KG -> g * product.pricePerUnit / 1000.0
-                Unit.L  -> g * product.pricePerUnit / 1000.0   // g = мл, жидкость как вода
-                Unit.ML -> g * product.pricePerUnit
+                MeasureUnit.G  -> g * product.pricePerUnit
+                MeasureUnit.KG -> g * product.pricePerUnit / 1000.0
+                MeasureUnit.L  -> g * product.pricePerUnit / 1000.0   // g = мл, жидкость как вода
+                MeasureUnit.ML -> g * product.pricePerUnit
                 else    -> 0.0   // PCS и прочие: цена только в единицах продукта
             }
         }

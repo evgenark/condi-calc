@@ -29,7 +29,7 @@ import io.github.evgenark.condicalc.R
 import io.github.evgenark.condicalc.data.Ingredient
 import io.github.evgenark.condicalc.data.Product
 import io.github.evgenark.condicalc.data.Repo
-import io.github.evgenark.condicalc.data.Unit
+import io.github.evgenark.condicalc.data.MeasureUnit
 import kotlinx.coroutines.launch
 
 class AddRecipeActivity : AppCompatActivity() {
@@ -170,8 +170,8 @@ class AddRecipeActivity : AppCompatActivity() {
                     productId = ing.product.id
                     measure = ing.measure
                     val own = when (ing.product.unit) {
-                        Unit.G -> "грамм"; Unit.KG -> "килограмм"
-                        Unit.L -> "литр"; Unit.ML -> "миллилитр"
+                        MeasureUnit.G -> "грамм"; MeasureUnit.KG -> "килограмм"
+                        MeasureUnit.L -> "литр"; MeasureUnit.ML -> "миллилитр"
                         else -> "штук."
                     }
                     if (measure.equals(own, ignoreCase = true)) measure = ""
@@ -329,15 +329,15 @@ class AddRecipeActivity : AppCompatActivity() {
     }
 
     private fun isPiece(p: Product) = when (p.unit) {
-        Unit.G, Unit.KG, Unit.L, Unit.ML -> false
+        MeasureUnit.G, MeasureUnit.KG, MeasureUnit.L, MeasureUnit.ML -> false
         else -> true
     }
 
     private fun unitLabel(p: Product) = when (p.unit) {
-        Unit.G -> "г"
-        Unit.KG -> "кг"
-        Unit.L -> "л"
-        Unit.ML -> "мл"
+        MeasureUnit.G -> "г"
+        MeasureUnit.KG -> "кг"
+        MeasureUnit.L -> "л"
+        MeasureUnit.ML -> "мл"
         else -> "шт"
     }
 
@@ -348,10 +348,10 @@ class AddRecipeActivity : AppCompatActivity() {
         val product = productOf(row) ?: return listOf(MeasureOption("—", ""))
         val piece = isPiece(product)
         val ownName = when (product.unit) {
-            Unit.G -> "грамм"
-            Unit.KG -> "килограмм"
-            Unit.L -> "литр"
-            Unit.ML -> "миллилитр"
+            MeasureUnit.G -> "грамм"
+            MeasureUnit.KG -> "килограмм"
+            MeasureUnit.L -> "литр"
+            MeasureUnit.ML -> "миллилитр"
             else -> "штук."
         }
         val options = mutableListOf(MeasureOption(ownName, ""))

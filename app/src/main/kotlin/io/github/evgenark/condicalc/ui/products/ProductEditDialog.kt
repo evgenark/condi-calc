@@ -22,7 +22,7 @@ import androidx.lifecycle.lifecycleScope
 import io.github.evgenark.condicalc.R
 import io.github.evgenark.condicalc.data.Product
 import io.github.evgenark.condicalc.data.Repo
-import io.github.evgenark.condicalc.data.Unit as DataUnit
+import io.github.evgenark.condicalc.data.MeasureUnit
 import kotlinx.coroutines.launch
 
 class ProductEditDialog(private val activity: FragmentActivity) {
@@ -75,7 +75,7 @@ class ProductEditDialog(private val activity: FragmentActivity) {
         unit.adapter = ArrayAdapter(
             activity,
             android.R.layout.simple_spinner_dropdown_item,
-            DataUnit.entries.map { it.label }
+            MeasureUnit.entries.map { it.label }
         )
 
         // Тап мимо полей сворачивает клавиатуру
@@ -147,7 +147,7 @@ class ProductEditDialog(private val activity: FragmentActivity) {
             ?: run { toast("Проверьте объём упаковки"); return }
         val packPrice = price.text.toString().replace(',', '.').toDoubleOrNull()
             ?: run { toast("Проверьте цену упаковки"); return }
-        val selectedUnit = DataUnit.entries[unit.selectedItemPosition]
+        val selectedUnit = MeasureUnit.entries[unit.selectedItemPosition]
 
         activity.lifecycleScope.launch {
             if (product == null) {
