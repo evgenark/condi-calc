@@ -15,9 +15,6 @@
             </intent-filter>
         </activity>
 
-        <activity 
-            android:name=".ui.products.EditProductActivity" 
-            android:exported="false"/>
         <activity
             android:name="io.github.evgenark.condicalc.ui.recipes.AddRecipeActivity" />
     </application>

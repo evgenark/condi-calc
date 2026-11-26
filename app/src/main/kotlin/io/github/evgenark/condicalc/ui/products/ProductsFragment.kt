@@ -1,6 +1,5 @@
 package io.github.evgenark.condicalc.ui.products
 
-import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.Fragment
@@ -20,14 +19,16 @@ class ProductsFragment : Fragment(R.layout.fragment_products) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val list = view.findViewById<RecyclerView>(R.id.productList)
         adapter = ProductAdapter(products) { id ->
-            val intent = Intent(requireContext(), EditProductActivity::class.java)
-            intent.putExtra(EditProductActivity.EXTRA_ID, id)
-            startActivity(intent)
+            ProductEditDialog(requireActivity()).apply {
+                onSaved = { loadProducts() }
+            }.show(id)
         }
         list.layoutManager = LinearLayoutManager(requireContext())
         list.adapter = adapter
         view.findViewById<View>(R.id.addProductBtn).setOnClickListener {
-            startActivity(Intent(requireContext(), EditProductActivity::class.java))
+            ProductEditDialog(requireActivity()).apply {
+                onSaved = { loadProducts() }
+            }.show(-1L)
         }
     }
 
