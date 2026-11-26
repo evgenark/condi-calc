@@ -15,15 +15,15 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.Spinner
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import io.github.evgenark.condicalc.R
 import io.github.evgenark.condicalc.data.Product
 import io.github.evgenark.condicalc.data.Repo
-import io.github.evgenark.condicalc.data.Unit
+import io.github.evgenark.condicalc.data.Unit as DataUnit
 import kotlinx.coroutines.launch
 
-class ProductEditDialog(private val activity: AppCompatActivity) {
+class ProductEditDialog(private val activity: FragmentActivity) {
 
     var onSaved: (() -> Unit)? = null
 
@@ -137,7 +137,7 @@ class ProductEditDialog(private val activity: AppCompatActivity) {
             ?: run { toast("Проверьте объём упаковки"); return }
         val packPrice = price.text.toString().replace(',', '.').toDoubleOrNull()
             ?: run { toast("Проверьте цену упаковки"); return }
-        val selectedUnit = Unit.entries[unit.selectedItemPosition]
+        val selectedUnit = DataUnit.entries[unit.selectedItemPosition]
 
         activity.lifecycleScope.launch {
             if (product == null) {
