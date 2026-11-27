@@ -10,6 +10,7 @@ import android.view.View
 import android.view.WindowInsets
 import android.view.Window
 import android.view.WindowManager
+import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.ArrayAdapter
 import android.widget.Button
@@ -17,6 +18,7 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.Spinner
 import android.widget.Toast
+import android.icu.util.Measure
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import io.github.evgenark.condicalc.R
@@ -47,22 +49,25 @@ class ProductEditDialog(private val activity: FragmentActivity) {
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         val v = LayoutInflater.from(activity).inflate(R.layout.dialog_product_edit, null)
         dialog.setContentView(v)
-        dialog.window?.apply {
-            setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
-            setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
-            setBackgroundDrawableResource(android.R.color.transparent)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                setDecorFitsSystemWindows(false)
-                decorView.setOnApplyWindowInsetsListener { view, insets ->
-                    val bars = insets.getInsets(
-                        WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout()
-                    )
-                    view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
-                    insets
-                }
+
+        // Тап мимо полей сворачивает клавиатуру
+        val hideKeyboard: () -> Unit = {
+            val focused = dialog.currentFocus
+            if (focused is EditText) {
+                focused.clearFocus()
+                val imm = activity.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                imm.hideSoftInputFromWindow(focused.windowToken, 0)
             }
         }
+        v.setOnClickListener { hideKeyboard() }
+        v.findViewById<View>(R.id.productContent).setOnClickListener { hideKeyboard() }
+
+        // «Готово» в поле цены сворачивает клавиатуру
+        v.findViewById<EditText>(R.id.editPackPrice).setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_DONE) { hideKeyboard(); true } else false
+        }
         // Список продуктов обновится при любом закрытии диалога
+
         dialog.setOnDismissListener { onSaved?.invoke() }
 
         name = v.findViewById(R.id.editName)
@@ -77,16 +82,6 @@ class ProductEditDialog(private val activity: FragmentActivity) {
             android.R.layout.simple_spinner_dropdown_item,
             MeasureUnit.entries.map { it.label }
         )
-
-        // Тап мимо полей сворачивает клавиатуру
-        v.setOnClickListener {
-            val focused = dialog.currentFocus
-            if (focused is EditText) {
-                focused.clearFocus()
-                val imm = activity.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-                imm.hideSoftInputFromWindow(focused.windowToken, 0)
-            }
-        }
 
         if (productId < 0) {
             // Новый продукт: блок мер появим после первого сохранения
