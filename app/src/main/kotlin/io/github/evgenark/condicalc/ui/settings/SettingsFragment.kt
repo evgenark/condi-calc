@@ -1,13 +1,16 @@
 package io.github.evgenark.condicalc.ui.settings
 
-import android.app.AlertDialog
 import android.os.Bundle
+import android.text.InputType
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import android.view.View
 import android.widget.EditText
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import io.github.evgenark.condicalc.R
 import io.github.evgenark.condicalc.data.Repo
 import io.github.evgenark.condicalc.data.db.UnitConversionEntity
@@ -51,20 +54,40 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
             orientation = android.widget.LinearLayout.VERTICAL
             setPadding(48, 24, 48, 0)
         }
+
         val nameInput = EditText(context).apply {
             hint = "Название (стакан, ст. л. ...)"
+            inputType = android.text.InputType.TYPE_CLASS_TEXT
+            setSingleLine(true)
+            imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_NEXT
             setText(existing?.name ?: "")
         }
         val gramsInput = EditText(context).apply {
             hint = "Вес, грамм"
             inputType = android.text.InputType.TYPE_CLASS_NUMBER or
                     android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+            setSingleLine(true)
+            imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_DONE
             setText(existing?.grams?.toString() ?: "")
         }
+        nameInput.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_NEXT) {
+                gramsInput.requestFocus(); true
+            } else false
+        }
+        gramsInput.setOnEditorActionListener { v, actionId, _ ->
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE) {
+                v.clearFocus()
+                val imm = v.context.getSystemService(android.content.Context.INPUT_METHOD_SERVICE)
+                        as android.view.inputmethod.InputMethodManager
+                imm.hideSoftInputFromWindow(v.windowToken, 0)
+                true
+            } else false
+        }
+
         container.addView(nameInput)
         container.addView(gramsInput)
-
-        AlertDialog.Builder(context)
+        MaterialAlertDialogBuilder(context)
             .setTitle(if (existing == null) "Новая мера" else "Редактировать")
             .setView(container)
             .setPositiveButton("Сохранить") { _, _ ->
@@ -85,7 +108,7 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
     }
 
     private fun confirmDelete(item: UnitConversionEntity) {
-        AlertDialog.Builder(requireContext())
+        MaterialAlertDialogBuilder(requireContext())
             .setTitle("Удалить «${item.name}»?")
             .setMessage("Привязки продуктов к этой мере тоже удалятся.")
             .setPositiveButton("Удалить") { _, _ ->
