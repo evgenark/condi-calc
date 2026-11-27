@@ -33,6 +33,7 @@ class ProductEditDialog(private val activity: FragmentActivity) {
     private var productId: Long = -1L
     private val convRows = mutableListOf<Triple<Long, EditText, Double?>>()
     private var existingRefs: Map<Long, Double> = emptyMap()
+    private var selectedUnitIndex = 0
 
     private lateinit var name: EditText
     private lateinit var unit: com.google.android.material.textfield.MaterialAutoCompleteTextView
@@ -75,7 +76,6 @@ class ProductEditDialog(private val activity: FragmentActivity) {
         convTitle = v.findViewById(R.id.convTitle)
         convContainer = v.findViewById(R.id.convContainer)
 
-        var selectedUnitIndex = 0
         unit.setAdapter(
             ArrayAdapter(
                 activity,
