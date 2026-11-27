@@ -36,11 +36,11 @@ class ProductEditDialog(private val activity: FragmentActivity) {
     private var selectedUnitIndex = 0
 
     private lateinit var name: EditText
-    private lateinit var unit: com.google.android.material.textfield.MaterialAutoCompleteTextView
     private lateinit var amount: EditText
     private lateinit var price: EditText
     private lateinit var convTitle: View
     private lateinit var convContainer: LinearLayout
+    private lateinit var amountLayout: com.google.android.material.textfield.TextInputLayout
 
     fun show(id: Long) {
         productId = id
@@ -70,21 +70,27 @@ class ProductEditDialog(private val activity: FragmentActivity) {
         dialog.setOnDismissListener { onSaved?.invoke() }
 
         name = v.findViewById(R.id.editName)
-        unit = v.findViewById(R.id.editUnit)
         amount = v.findViewById(R.id.editPackAmount)
         price = v.findViewById(R.id.editPackPrice)
         convTitle = v.findViewById(R.id.convTitle)
         convContainer = v.findViewById(R.id.convContainer)
-
-        unit.setAdapter(
-            ArrayAdapter(
-                activity,
-                android.R.layout.simple_dropdown_item_1line,
-                MeasureUnit.entries.map { it.label }
+        amountLayout = v.findViewById(R.id.amountLayout)
+        amountLayout.suffixText = MeasureUnit.entries[selectedUnitIndex].label
+        amountLayout.setEndIconOnClickListener {
+            val popup = androidx.appcompat.widget.ListPopupWindow(activity)
+            popup.setAdapter(
+                ArrayAdapter(activity, android.R.layout.simple_list_item_1,
+                    MeasureUnit.entries.map { it.label })
             )
-        )
-        unit.setOnItemClickListener { _, _, pos, _ -> selectedUnitIndex = pos }
-        unit.setText(MeasureUnit.entries[selectedUnitIndex].label, false)
+            popup.anchorView = amountLayout
+            popup.setSelection(selectedUnitIndex)
+            popup.setOnItemClickListener { _, _, pos, _ ->
+                selectedUnitIndex = pos
+                amountLayout.suffixText = MeasureUnit.entries[pos].label
+                popup.dismiss()
+            }
+            popup.show()
+        }
 
         if (productId < 0) {
             // Новый продукт: блок мер появим после первого сохранения
@@ -97,7 +103,7 @@ class ProductEditDialog(private val activity: FragmentActivity) {
                 product = loaded
                 name.setText(loaded.name)
                 selectedUnitIndex = loaded.unit.ordinal
-                unit.setText(loaded.unit.label, false)
+                amountLayout.suffixText = loaded.unit.label
                 amount.setText(formatNum(loaded.packAmount))
                 price.setText(formatNum(loaded.packPrice))
                 convTitle.visibility = View.VISIBLE
