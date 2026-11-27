@@ -16,7 +16,6 @@ import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
-import android.widget.Spinner
 import android.widget.Toast
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
@@ -36,7 +35,7 @@ class ProductEditDialog(private val activity: FragmentActivity) {
     private var existingRefs: Map<Long, Double> = emptyMap()
 
     private lateinit var name: EditText
-    private lateinit var unit: Spinner
+    private lateinit var unit: com.google.android.material.textfield.MaterialAutoCompleteTextView
     private lateinit var amount: EditText
     private lateinit var price: EditText
     private lateinit var convTitle: View
@@ -76,11 +75,16 @@ class ProductEditDialog(private val activity: FragmentActivity) {
         convTitle = v.findViewById(R.id.convTitle)
         convContainer = v.findViewById(R.id.convContainer)
 
-        unit.adapter = ArrayAdapter(
-            activity,
-            android.R.layout.simple_spinner_dropdown_item,
-            MeasureUnit.entries.map { it.label }
+        var selectedUnitIndex = 0
+        unit.setAdapter(
+            ArrayAdapter(
+                activity,
+                android.R.layout.simple_dropdown_item_1line,
+                MeasureUnit.entries.map { it.label }
+            )
         )
+        unit.setOnItemClickListener { _, _, pos, _ -> selectedUnitIndex = pos }
+        unit.setText(MeasureUnit.entries[selectedUnitIndex].label, false)
 
         if (productId < 0) {
             // Новый продукт: блок мер появим после первого сохранения
@@ -92,7 +96,8 @@ class ProductEditDialog(private val activity: FragmentActivity) {
                     ?: run { dialog.dismiss(); return@launch }
                 product = loaded
                 name.setText(loaded.name)
-                unit.setSelection(loaded.unit.ordinal)
+                selectedUnitIndex = loaded.unit.ordinal
+                unit.setText(loaded.unit.label, false)
                 amount.setText(formatNum(loaded.packAmount))
                 price.setText(formatNum(loaded.packPrice))
                 convTitle.visibility = View.VISIBLE
@@ -157,7 +162,7 @@ class ProductEditDialog(private val activity: FragmentActivity) {
             ?: run { toast("Проверьте объём упаковки"); return }
         val packPrice = price.text.toString().replace(',', '.').toDoubleOrNull()
             ?: run { toast("Проверьте цену упаковки"); return }
-        val selectedUnit = MeasureUnit.entries[unit.selectedItemPosition]
+        val selectedUnit = MeasureUnit.entries[selectedUnitIndex]
 
         activity.lifecycleScope.launch {
             if (product == null) {
