@@ -18,7 +18,6 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.Spinner
 import android.widget.Toast
-import android.icu.util.Measure
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import io.github.evgenark.condicalc.R
@@ -102,6 +101,22 @@ class ProductEditDialog(private val activity: FragmentActivity) {
         }
 
         v.findViewById<Button>(R.id.saveBtn).setOnClickListener { save(dialog) }
+
+        dialog.window?.apply {
+            setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
+            setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+            setBackgroundDrawableResource(android.R.color.transparent)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                setDecorFitsSystemWindows(false)
+                decorView.setOnApplyWindowInsetsListener { view, insets ->
+                    val bars = insets.getInsets(
+                        WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout()
+                    )
+                    view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+                    insets
+                }
+            }
+        }
 
         dialog.show()
     }
