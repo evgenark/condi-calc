@@ -6,6 +6,7 @@ import android.app.Dialog
 import android.content.Context
 import android.view.MotionEvent
 import android.view.inputmethod.InputMethodManager
+import android.view.inputmethod.EditorInfo
 import android.graphics.Rect
 import android.view.LayoutInflater
 import android.view.View
@@ -58,6 +59,10 @@ class AddRecipeActivity : AppCompatActivity() {
         setContentView(R.layout.activity_add_recipe)
         totalText = findViewById(R.id.totalText)
         emptyHint = findViewById(R.id.emptyHint)
+        findViewById<EditText>(R.id.recipeNameInput).setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_DONE) { hideKeyboard(); true } else false
+        }
+        findViewById<View>(android.R.id.content).setOnClickListener { hideKeyboard() }
 
         editRecipeId = intent.getLongExtra("recipe_id", 0L)
         if (editRecipeId > 0) title = "Редактирование рецепта"
@@ -208,6 +213,15 @@ class AddRecipeActivity : AppCompatActivity() {
         refresh()
     }
 
+    private fun hideKeyboard() {
+        val focused = currentFocus
+        if (focused is EditText) {
+            focused.clearFocus()
+            val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.hideSoftInputFromWindow(focused.windowToken, 0)
+        }
+    }
+
     private fun openEditSheet(index: Int) {
         val row = rows.getOrNull(index) ?: return
         val dialog = Dialog(this)
@@ -302,8 +316,13 @@ class AddRecipeActivity : AppCompatActivity() {
             }
         }
 
+        v.findViewById<EditText>(R.id.sheetAmountInput).setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_DONE) { hideKeyboard(); true } else false
+        }
+
         dialog.show()
     }
+
     private fun save() {
         val name = findViewById<EditText>(R.id.recipeNameInput).text.toString().trim()
         if (name.isEmpty()) {
