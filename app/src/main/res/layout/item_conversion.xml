@@ -9,9 +9,6 @@
 
     <TextView
         android:id="@+id/convName"
-        android:inputType="text"
-        android:imeOptions="actionNext"
-        android:nextFocusDown="@+id/convGrams"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
@@ -19,8 +16,6 @@
 
     <TextView
         android:id="@+id/convGrams"
-        android:inputType="numberDicemal"
-        android:imeOptions="actionDone"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textColor="#757575" />
