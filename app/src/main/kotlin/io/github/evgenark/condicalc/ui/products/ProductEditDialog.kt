@@ -23,6 +23,7 @@ import io.github.evgenark.condicalc.R
 import io.github.evgenark.condicalc.data.Product
 import io.github.evgenark.condicalc.data.Repo
 import io.github.evgenark.condicalc.data.MeasureUnit
+import kotlin.math.abs
 import kotlinx.coroutines.launch
 
 class ProductEditDialog(private val activity: FragmentActivity) {
@@ -158,6 +159,9 @@ class ProductEditDialog(private val activity: FragmentActivity) {
             row.addView(input)
             convContainer.addView(row)
             convRows.add(Triple(conv.id, input, conv.grams))
+            existingRefs[conv.id]?.let {
+                if (abs(it - conv.grams) > 1e-9) input.setText(formatNum(it))
+            }
         }
     }
 
@@ -201,9 +205,9 @@ class ProductEditDialog(private val activity: FragmentActivity) {
     private suspend fun saveRefs() {
         val p = product ?: return
         val values = mutableMapOf<Long, Double>()
-        for ((convId, input, _) in convRows) {
+        for ((convId, input, defaultGrams) in convRows) {
             val text = input.text.toString().replace(',', '.').trim()
-            values[convId] = text.toDoubleOrNull() ?: existingRefs[convId] ?: continue
+            values[convId] = text.toDoubleOrNull() ?: defaultGrams
         }
         Repo.saveProductRefs(p.id, values)
     }
