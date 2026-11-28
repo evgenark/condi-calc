@@ -10,7 +10,8 @@ import io.github.evgenark.condicalc.data.Product
 
 class ProductAdapter(
     private val products: List<Product>,
-    private val onClick: (Long) -> Unit,   // теперь передаём id, а не индекс
+    private val onEdit: (Long) -> Unit,
+    private val onDelete: (Product) -> Unit,
 ) : RecyclerView.Adapter<ProductAdapter.VH>() {
 
     class VH(v: View) : RecyclerView.ViewHolder(v) {
@@ -29,7 +30,10 @@ class ProductAdapter(
         val product = products[position]
         holder.name.text = product.name
         holder.price.text = "%.2f ₽/%s".format(product.pricePerStd, product.stdUnitLabel)
-        // holder.price.text = "%.0f ₽/%s".format(product.pricePerUnit, product.unit.label)
-        holder.itemView.setOnClickListener { onClick(product.id) }
+        holder.itemView.setOnClickListener { onEdit(product.id) }
+        holder.itemView.setOnLongClickListener {
+            onDelete(product)
+            true
+        }
     }
 }

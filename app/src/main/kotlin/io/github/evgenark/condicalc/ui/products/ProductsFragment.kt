@@ -17,18 +17,47 @@ class ProductsFragment : Fragment(R.layout.fragment_products) {
     private val products: MutableList<Product> = mutableListOf()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        val list = view.findViewById<RecyclerView>(R.id.productList)
-        adapter = ProductAdapter(products) { id ->
-            ProductEditDialog(requireActivity()).apply {
-                onSaved = { loadProducts() }
-            }.show(id)
-        }
+        val list = view.findViewById<RecyclerView>(R.id.productList) 
+        adapter = ProductAdapter(
+            products,
+            onEdit = { id ->
+                ProductEditDialog(requireActivity()).apply {
+                    onSaved = { loadProducts() }
+                }.show(id)
+            },
+            onDelete = { p -> confirmDelete(p) }
+        )
         list.layoutManager = LinearLayoutManager(requireContext())
         list.adapter = adapter
         view.findViewById<View>(R.id.addProductBtn).setOnClickListener {
             ProductEditDialog(requireActivity()).apply {
                 onSaved = { loadProducts() }
             }.show(-1L)
+        }
+    }
+
+    private fun confirmDelete(p: Product) {
+        lifecycleScope.launch {
+            val used = Repo.isProductUsed(p.id)
+            if (used) {
+                com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Удалить «${p.name}»?")
+                    .setMessage("Этот продукт участвует в рецептах. Сначала уберите его из рецептов — после этого продукт можно будет удалить.")
+                    .setPositiveButton("Понятно", null)
+                    .show()
+            } else {
+                com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Удалить «${p.name}»?")
+                    .setMessage("Привязки мер этого продукта тоже удалятся.")
+                    .setPositiveButton("Удалить") { _, _ ->
+                        lifecycleScope.launch {
+                            Repo.deleteProduct(p.id)
+                            loadProducts()
+                        }
+                    }
+                    .setNegativeButton("Отмена", null)
+                    .show()
+            }
         }
     }
 

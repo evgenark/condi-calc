@@ -56,7 +56,16 @@ object Repo {
 
     suspend fun deleteProduct(id: Long) {
         val db = DatabaseProvider.get(ApplicationHolder.context)
+        db.refDao().deleteByProduct(id)   // чистим привязки мер, иначе останутся сироты
         db.productDao().deleteById(id)
+    }
+
+    suspend fun isProductUsed(productId: Long): Boolean {
+        val db = DatabaseProvider.get(ApplicationHolder.context)
+        val recipes = db.recipeDao().getAll()
+        return recipes.any { recipe ->
+            db.itemDao().getByRecipe(recipe.id).any { it.productId == productId }
+        }
     }
 
     suspend fun seedConversionsIfEmpty() {
