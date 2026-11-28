@@ -17,6 +17,10 @@
 
         <activity
             android:name="io.github.evgenark.condicalc.ui.recipes.AddRecipeActivity" />
+        <activity
+            android:name="io.github.evgenark.condicalc.ui.recipes.ArchivesActivity" />
+        <activity
+            android:name="io.github.evgenark.condicalc.ui.recipes.ArchiveDetailsActivity" />
     </application>
 </manifest>
 

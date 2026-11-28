@@ -1,4 +1,3 @@
-
 package io.github.evgenark.condicalc.data
 
 import android.content.Context
@@ -7,6 +6,8 @@ import io.github.evgenark.condicalc.data.db.AppDatabase
 import io.github.evgenark.condicalc.data.db.MIGRATION_1_2
 import io.github.evgenark.condicalc.data.db.MIGRATION_2_3
 import io.github.evgenark.condicalc.data.db.MIGRATION_3_4
+import io.github.evgenark.condicalc.data.db.MIGRATION_4_5
+
 object DatabaseProvider {
     private var _db: AppDatabase? = null
 
@@ -17,7 +18,7 @@ object DatabaseProvider {
                 AppDatabase::class.java,
                 "condi_calc.db"
             )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                 .build()
         }
         return _db!!

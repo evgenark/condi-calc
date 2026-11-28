@@ -86,3 +86,21 @@ interface UnitConversionRefDao {
 
     @Delete suspend fun delete(ref: UnitConversionRefEntity)
 }
+
+@Dao
+interface ArchiveDao {
+    @Insert suspend fun insert(archive: ArchivedRecipeEntity): Long
+    @Insert suspend fun insertAll(items: List<ArchivedItemEntity>)
+
+    @Query("SELECT * FROM archived_recipes ORDER BY archivedAt DESC")
+    suspend fun getAll(): List<ArchivedRecipeEntity>
+
+    @Query("SELECT * FROM archived_recipes WHERE id = :id")
+    suspend fun getById(id: Long): ArchivedRecipeEntity?
+
+    @Query("SELECT * FROM archived_items WHERE archiveId = :archiveId ORDER BY id ASC")
+    suspend fun getItems(archiveId: Long): List<ArchivedItemEntity>
+
+    @Query("DELETE FROM archived_recipes WHERE id = :id")
+    suspend fun deleteById(id: Long)
+}

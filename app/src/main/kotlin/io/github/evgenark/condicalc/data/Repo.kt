@@ -190,6 +190,88 @@ object Repo {
         db.recipeDao().deleteById(recipeId)
     }
     
+    // --- Архив ---
+
+    suspend fun archiveRecipe(recipeId: Long, comment: String): Long? {
+        val db = DatabaseProvider.get(ApplicationHolder.context)
+        val recipe = db.recipeDao().getById(recipeId) ?: return null
+        val ingredients = getRecipeIngredients(recipeId)
+
+        val archiveId = db.archiveDao().insert(
+            ArchivedRecipeEntity(
+                name = recipe.name,
+                comment = comment.trim(),
+                createdAt = recipe.createdAt,
+                archivedAt = System.currentTimeMillis(),
+                totalCost = ingredients.sumOf { it.cost }
+            )
+        )
+        db.archiveDao().insertAll(
+            ingredients.map { ing ->
+                ArchivedItemEntity(
+                    archiveId = archiveId,
+                    productName = ing.product.name,
+                    amount = ing.amount,
+                    measure = ing.measure,
+                    unitLabel = ing.product.unit.label,
+                    grams = ing.grams,
+                    cost = ing.cost
+                )
+            }
+        )
+        return archiveId
+    }
+
+    suspend fun getAllArchives(): List<ArchivedRecipeEntity> {
+        val db = DatabaseProvider.get(ApplicationHolder.context)
+        return db.archiveDao().getAll()
+    }
+
+    suspend fun getArchiveById(id: Long): ArchivedRecipeEntity? {
+        val db = DatabaseProvider.get(ApplicationHolder.context)
+        return db.archiveDao().getById(id)
+    }
+
+    suspend fun getArchiveItems(archiveId: Long): List<ArchivedItemEntity> {
+        val db = DatabaseProvider.get(ApplicationHolder.context)
+        return db.archiveDao().getItems(archiveId)
+    }
+
+    suspend fun deleteArchive(id: Long) {
+        val db = DatabaseProvider.get(ApplicationHolder.context)
+        db.archiveDao().deleteById(id)   // строки удалятся каскадом по внешнему ключу
+    }
+
+    // Восстановление снимка: новый рецепт, ингредиенты ищутся по именам.
+    // Возвращает id нового рецепта и список ненайденных продуктов (для строк-заглушек в редакторе)
+    suspend fun restoreRecipe(archiveId: Long): Pair<Long, List<MissingIngredient>> {
+        val db = DatabaseProvider.get(ApplicationHolder.context)
+        val archive = db.archiveDao().getById(archiveId) ?: return 0L to emptyList()
+        val items = db.archiveDao().getItems(archiveId)
+        val productsByName = db.productDao().getAll().associateBy { it.name.lowercase() }
+
+        val restoredId = db.recipeDao().insert(
+            RecipeEntity(name = archive.name, createdAt = System.currentTimeMillis())
+        )
+        val missing = mutableListOf<MissingIngredient>()
+        for (item in items) {
+            val product = productsByName[item.productName.lowercase()]
+            if (product == null) {
+                missing.add(MissingIngredient(item.productName, item.amount, item.measure))
+                continue
+            }
+            db.itemDao().insert(
+                RecipeItemEntity(
+                    recipeId = restoredId,
+                    productId = product.id,
+                    amount = item.amount,
+                    measure = item.measure
+                )
+            )
+        }
+        return restoredId to missing
+    }
+
     suspend fun getAllRefs(): List<UnitConversionRefEntity> {
         val db = DatabaseProvider.get(ApplicationHolder.context)
         return db.refDao().getAll()

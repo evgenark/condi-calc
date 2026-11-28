@@ -68,3 +68,10 @@ data class Recipe(
 ) {
     val totalCost get() = ingredients.sumOf { it.cost }
 }
+
+// Продукт из снимка архива, которого нет в текущем списке продуктов
+data class MissingIngredient(
+    val name: String,
+    val amount: Double,
+    val measure: String,
+)

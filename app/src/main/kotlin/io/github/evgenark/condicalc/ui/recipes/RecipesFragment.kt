@@ -29,6 +29,9 @@ class RecipesFragment : Fragment(R.layout.fragment_recipes) {
         view.findViewById<View>(R.id.addRecipeBtn).setOnClickListener {
             startActivity(Intent(requireContext(), AddRecipeActivity::class.java))
         }
+        view.findViewById<View>(R.id.archivesBtn).setOnClickListener {
+            startActivity(Intent(requireContext(), ArchivesActivity::class.java))
+        }
     }
 
     override fun onResume() {

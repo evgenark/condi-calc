@@ -83,3 +83,40 @@ data class UnitConversionRefEntity(
     val productId: Long,
     val quantity: Double,
 )
+
+// ---- Архив ----
+
+// Снимок изделия на момент архивации: живёт независимо от живых таблиц
+@Entity(tableName = "archived_recipes")
+data class ArchivedRecipeEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val comment: String = "",
+    val createdAt: Long = 0,     // когда создан оригинал
+    val archivedAt: Long,        // момент архивации
+    val totalCost: Double,       // итог на момент архивации
+)
+
+// Строка снимка. Хранит имя продукта, а не id — архиву всё равно, что происходит с базой
+@Entity(
+    tableName = "archived_items",
+    foreignKeys = [
+        ForeignKey(
+            entity = ArchivedRecipeEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["archiveId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index("archiveId")]
+)
+data class ArchivedItemEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val archiveId: Long,
+    val productName: String,
+    val amount: Double,
+    val measure: String = "",    // "" — в единицах продукта, иначе имя меры
+    val unitLabel: String = "",  // подпись собственной единицы продукта на момент снимка ("кг", "шт"...)
+    val grams: Double?,          // граммы/миллилитры на момент архивации (null — цена через меру не считалась)
+    val cost: Double,            // стоимость строки на момент архивации
+)

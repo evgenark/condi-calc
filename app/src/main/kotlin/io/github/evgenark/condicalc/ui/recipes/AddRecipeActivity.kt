@@ -40,6 +40,7 @@ class AddRecipeActivity : AppCompatActivity() {
         var amountText: String = ""
         var measure: String = ""   // "" — в единицах продукта
         var costLabel: String = ""
+        var missingName: String? = null   // не пусто — строка-заглушка «продукт не найден»
     }
 
     private data class MeasureOption(val label: String, val value: String, val enabled: Boolean = true)
@@ -93,6 +94,7 @@ class AddRecipeActivity : AppCompatActivity() {
             when (item.itemId) {
                 R.id.action_save -> { save(); true }
                 R.id.action_save_as -> { saveAsCopy(); true }
+                R.id.action_archive -> { showArchiveDialog(); true }
                 R.id.action_delete_recipe -> { confirmDelete(); true }
                 else -> false
             }
@@ -123,6 +125,46 @@ class AddRecipeActivity : AppCompatActivity() {
             Toast.makeText(this@AddRecipeActivity, "Копия создана", Toast.LENGTH_SHORT).show()
             finish()
         }
+    }
+
+    private fun showArchiveDialog() {
+        if (editRecipeId == 0L) {
+            Toast.makeText(this, "Сначала сохраните изделие (меню → Сохранить)", Toast.LENGTH_LONG).show()
+            return
+        }
+        val unbound = rows.count { r ->
+            val amount = r.amountText.replace(',', '.').toDoubleOrNull() ?: 0.0
+            productOf(r) != null && amount > 0 && costFor(r) == null
+        }
+        val container = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(48, 8, 48, 0)
+        }
+        val commentInput = EditText(this).apply {
+            hint = "Комментарий (необязательно)"
+            inputType = android.text.InputType.TYPE_CLASS_TEXT
+            setSingleLine(true)
+            imeOptions = EditorInfo.IME_ACTION_DONE
+        }
+        container.addView(commentInput)
+
+        val message = buildString {
+            append("В снимок попадут цены на текущий момент. Живое изделие останется без изменений.")
+            if (unbound > 0) append("\n\nВнимание: в $unbound строк(ах) не хватает привязок — они сохранятся с нулевой стоимостью.")
+        }
+
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle("Сохранить в архив?")
+            .setMessage(message)
+            .setView(container)
+            .setPositiveButton("Архивировать") { _, _ ->
+                lifecycleScope.launch {
+                    Repo.archiveRecipe(editRecipeId, commentInput.text.toString())
+                    Toast.makeText(this@AddRecipeActivity, "Снимок сохранён в архиве", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Отмена", null)
+            .show()
     }
 
     private fun confirmDelete() {
@@ -187,7 +229,19 @@ class AddRecipeActivity : AppCompatActivity() {
                 })
             }
         }
-
+        // Строки-заглушки для продуктов, не найденных при восстановлении из архива
+        val missNames = intent.getStringArrayExtra("missing_names") ?: emptyArray()
+        val missAmounts = intent.getDoubleArrayExtra("missing_amounts")
+        val missMeasures = intent.getStringArrayExtra("missing_measures")
+        missNames.forEachIndexed { i, name ->
+            rows.add(Row().apply {
+                missingName = name
+                measure = missMeasures?.getOrNull(i) ?: ""
+                amountText = missAmounts?.getOrNull(i)?.let { a ->
+                    if (a % 1.0 == 0.0) a.toLong().toString() else "%.1f".format(a)
+                } ?: ""
+            })
+        }
         refresh()
     }
 
@@ -269,7 +323,7 @@ class AddRecipeActivity : AppCompatActivity() {
         measureInput.threshold = 1
         measureInput.setOnClickListener { measureInput.showDropDown() }
 
-        productInput.setText(productOf(row)?.name ?: "", false)
+        productInput.setText(productOf(row)?.name ?: row.missingName ?: "", false)
 
         fun bindMeasure() {
             measureAdapter.submitOptions(measureOptionsFor(row))
@@ -458,7 +512,8 @@ class AddRecipeActivity : AppCompatActivity() {
             val row = rows[position]
             val product = productOf(row)
 
-            holder.name.text = product?.name ?: "Выберите продукт"
+            holder.name.text = row.missingName?.let { "⚠ «$it» не найден" }
+                ?: (product?.name ?: "Выберите продукт")
             val amount = row.amountText.replace(',', '.').toDoubleOrNull()
             val amountStr = when {
                 amount == null -> "—"
