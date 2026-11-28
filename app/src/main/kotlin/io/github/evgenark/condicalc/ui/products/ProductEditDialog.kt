@@ -154,7 +154,6 @@ class ProductEditDialog(private val activity: FragmentActivity) {
                 hint = "по умолчанию ${formatNum(conv.grams)} г"
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             }
-            existingRefs[conv.id]?.let { input.setText(formatNum(it)) }
             row.addView(label)
             row.addView(input)
             convContainer.addView(row)
@@ -208,7 +207,7 @@ class ProductEditDialog(private val activity: FragmentActivity) {
         for ((convId, input, defaultGrams) in convRows) {
             val text = input.text.toString().replace(',', '.').trim()
             // Пустое поле = сброс к дефолтной мере
-            values[convId] = text.toDoubleOrNull() ?: defaultGrams ; continue
+            values[convId] = text.toDoubleOrNull() ?: defaultGrams ?: continue
         }
         Repo.saveProductRefs(p.id, values)
     }
