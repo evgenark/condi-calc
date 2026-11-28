@@ -207,7 +207,8 @@ class ProductEditDialog(private val activity: FragmentActivity) {
         val values = mutableMapOf<Long, Double>()
         for ((convId, input, defaultGrams) in convRows) {
             val text = input.text.toString().replace(',', '.').trim()
-            values[convId] = text.toDoubleOrNull() ?: defaultGrams
+            // Пустое поле = сброс к дефолтной мере
+            values[convId] = text.toDoubleOrNull() ?: defaultGrams : continue
         }
         Repo.saveProductRefs(p.id, values)
     }
